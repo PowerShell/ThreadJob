@@ -15,7 +15,7 @@ using System.Management.Automation.Security;
 using System.Text;
 using System.Threading;
 
-namespace ThreadJob
+namespace Microsoft.PowerShell.ThreadJob
 {
     [Cmdlet(VerbsLifecycle.Start, "ThreadJob")]
     [OutputType(typeof(ThreadJob))]
@@ -469,7 +469,7 @@ namespace ThreadJob
         private Dictionary<string, object> _usingValuesMap;
         private PSDataCollection<object> _input;
         private Runspace _rs;
-        private PowerShell _ps;
+        private System.Management.Automation.PowerShell _ps;
         private PSDataCollection<PSObject> _output;
         private bool _runningInitScript;
         private PSHost _streamingHost;
@@ -625,7 +625,7 @@ namespace ThreadJob
             {
                 _rs = RunspaceFactory.CreateRunspace(iss);
             }
-            _ps = PowerShell.Create();
+            _ps = System.Management.Automation.PowerShell.Create();
             _ps.Runspace = _rs;
             _ps.InvocationStateChanged += (sender, psStateChanged) =>
             {
@@ -725,10 +725,10 @@ namespace ThreadJob
             // Set current location path on the runspace, if available.
             if (_currentLocationPath != null)
             {
-                using (var ps = PowerShell.Create())
+                using (var ps = System.Management.Automation.PowerShell.Create())
                 {
                     ps.Runspace = _rs;
-                    ps.AddCommand("Set-Location").AddParameter("Path", _currentLocationPath).Invoke();
+                    ps.AddCommand("Set-Location").AddParameter("LiteralPath", _currentLocationPath).Invoke();
                 }
             }
 

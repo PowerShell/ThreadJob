@@ -1,117 +1,121 @@
-<#
-.SYNOPSIS
-    A script that provides simple entry points for bootstrapping, building and testing.
-.DESCRIPTION
-    A script to make it easy to bootstrap, build and run tests.
-.EXAMPLE
-    PS > .\build.ps1 -Bootstrap
-    Check and install prerequisites for the build.
-.EXAMPLE
-    PS > .\build.ps1 -Configuration Release -Framework net461
-    Build the main module with 'Release' configuration and targeting 'net461'.
-.EXAMPLE
-    PS > .\build.ps1
-    Build the main module with the default configuration (Debug) and the default target framework (determined by the current session).
-.EXAMPLE
-    PS > .\build.ps1 -Test
-    Run xUnit tests with the default configuration (Debug) and the default target framework (determined by the current session).
-.PARAMETER Clean
-    Clean the local repo, but keep untracked files.
-.PARAMETER Bootstrap
-    Check and install the build prerequisites.
-.PARAMETER Test
-    Run tests.
-.PARAMETER Configuration
-    The configuration setting for the build. The default value is 'Debug'.
-.PARAMETER Framework
-    The target framework for the build.
-    When not specified, the target framework is determined by the current PowerShell session:
-    - If the current session is PowerShell Core, then use 'netcoreapp2.1' as the default target framework.
-    - If the current session is Windows PowerShell, then use 'net461' as the default target framework.
-#>
-[CmdletBinding()]
-param(
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+param (
+    [Parameter(ParameterSetName="build")]
     [switch]
     $Clean,
 
+    [Parameter(ParameterSetName="build")]
     [switch]
-    $Bootstrap,
+    $Build,
 
+    [Parameter(ParameterSetName="build")]
     [switch]
     $Test,
 
-    [ValidateSet("Debug", "Release")]
-    [string]
-    $Configuration = "Debug",
+    [Parameter(ParameterSetName="build")]
+    [string[]]
+    [ValidateSet("Functional","StaticAnalysis")]
+    $TestType = @("Functional"),
 
-    [ValidateSet("net461", "netcoreapp2.1")]
-    [string]
-    $Framework
+    [Parameter(ParameterSetName="help")]
+    [switch]
+    $UpdateHelp,
+
+    [ValidateSet("Debug", "Release")]
+    [string] $BuildConfiguration = "Debug",
+
+    [ValidateSet("net461", "netcoreapp2.1", "netstandard2.0")]
+    [string] $BuildFramework = "net461"
 )
 
-# Clean step
-if ($Clean) {
-    try {
-        Push-Location $PSScriptRoot
-        git clean -fdX
-        return
-    } finally {
-        Pop-Location
+if ( ! ( Get-Module -ErrorAction SilentlyContinue PSPackageProject) ) {
+    Install-Module PSPackageProject
+}
+
+$config = Get-PSPackageProjectConfiguration -ConfigPath $PSScriptRoot
+
+$script:ModuleName = $config.ModuleName
+$script:SrcPath = $config.SourcePath
+$script:OutDirectory = $config.BuildOutputPath
+$script:TestPath = $config.TestPath
+
+$script:ModuleRoot = $PSScriptRoot
+$script:Culture = $config.Culture
+$script:HelpPath = $config.HelpPath
+
+$script:BuildConfiguration = $BuildConfiguration
+$script:BuildFramework = $BuildFramework
+
+. "$PSScriptRoot\doBuild.ps1"
+
+# The latest DotNet (3.1.1) is needed to perform binary build.
+$dotNetCmd = Get-Command -Name dotNet -ErrorAction SilentlyContinue
+$dotnetVersion = $null
+if ($dotNetCmd -ne $null) {
+    $info = dotnet --info
+    foreach ($item in $info) {
+        $index = $item.IndexOf('Version:')
+        if ($index -gt -1) {
+            $versionStr = $item.SubString('Version:'.Length + $index)
+            $null = [version]::TryParse($versionStr, [ref] $dotnetVersion)
+            break
+        }
     }
 }
+# DotNet 3.1.1 is installed in ci.yml.  Just check installation and version here.
+Write-Verbose -Verbose -Message "Installed DotNet found: $($dotNetCmd -ne $null), version: $versionStr"
+<#
+$dotNetVersionOk = ($dotnetVersion -ne $null) -and ((($dotnetVersion.Major -eq 3) -and ($dotnetVersion.Minor -ge 1)) -or ($dotnetVersion.Major -gt 3))
+if (! $dotNetVersionOk) {
+    
+    Write-Verbose -Verbose -Message "Installing dotNet..."
+    $installObtainUrl = "https://dotnet.microsoft.com/download/dotnet-core/scripts/v1"
 
-Import-Module "$PSScriptRoot/tools/helper.psm1"
+    Remove-Item -ErrorAction SilentlyContinue -Recurse -Force ~\AppData\Local\Microsoft\dotnet
+    $installScript = "dotnet-install.ps1"
+    Invoke-WebRequest -Uri $installObtainUrl/$installScript -OutFile $installScript
 
-if ($Bootstrap) {
-    Write-Log "Validate and install missing prerequisits for building ..."
-
-    Install-Dotnet
-    return
+    & ./$installScript -Channel 'release' -Version '3.1.101'
+    Write-Verbose -Verbose -Message "dotNet installation complete."
 }
+#>
 
-function Invoke-Build
+if ($Clean -and (Test-Path $OutDirectory))
 {
-    param (
-        [string] $Configuration,
-        [string] $Framework
-    )
+    Remove-Item -Path $OutDirectory -Force -Recurse -ErrorAction Stop -Verbose
 
-    $sourcePath = Join-Path $PSScriptRoot PSThreadJob
-    Push-Location $sourcePath
-    try {
-        Write-Log "Building PSThreadJob binary..."
-        dotnet publish --configuration $Configuration --framework $Framework --output bin
-
-        Write-Log "Create Signed signing destination directory..."
-        $signedPath  = Join-Path . "bin\$Configuration\Signed"
-        if (! (Test-Path $signedPath))
-        {
-            $null = New-Item -Path $signedPath -ItemType Directory
-        }
-
-        Write-Log "Creating PSThreadJob signing source directory..."
-        $destPath = Join-Path . "bin\$Configuration\PSThreadJob"
-        if (! (Test-Path $destPath))
-        {
-            $null = New-Item -Path $destPath -ItemType Directory
-        }
-
-        Write-Log "Copying ThreadJob.psd1 file for signing to $destPath..."
-        $psd1FilePath = Join-Path . ThreadJob.psd1
-        Copy-Item -Path $psd1FilePath -Destination $destPath -Force
-
-        Write-Log "Copying Microsoft.PowerShell.ThreadJob.dll file for signing to $destPath..."
-        $binFilePath = Join-Path . "bin\$Configuration\$Framework\Microsoft.PowerShell.ThreadJob.dll"
-        Copy-Item -Path $binFilePath -Destination $destPath -Force
+    if (Test-Path "${SrcPath}/code/bin")
+    {
+        Remove-Item -Path "${SrcPath}/code/bin" -Recurse -Force -ErrorAction Stop -Verbose
     }
-    finally {
-        Pop-Location
+
+    if (Test-Path "${SrcPath}/code/obj")
+    {
+        Remove-Item -Path "${SrcPath}/code/obj" -Recurse -Force -ErrorAction Stop -Verbose
     }
 }
 
-# Build/Test step
-# $buildTask = if ($Test) { "RunTests" } else { "ZipRelease" }
+if (-not (Test-Path $OutDirectory))
+{
+    $script:OutModule = New-Item -ItemType Directory -Path (Join-Path $OutDirectory $ModuleName)
+}
+else
+{
+    $script:OutModule = Join-Path $OutDirectory $ModuleName
+}
 
-$arguments = @{ Configuration = $Configuration }
-if ($Framework) { $arguments.Add("Framework", $Framework) }
-Invoke-Build @arguments
+if ($Build.IsPresent)
+{
+    $sb = (Get-Item Function:DoBuild).ScriptBlock
+    Invoke-PSPackageProjectBuild -BuildScript $sb
+}
+
+if ( $Test.IsPresent ) {
+    Invoke-PSPackageProjectTest -Type $TestType
+}
+
+if ($UpdateHelp.IsPresent) {
+    Add-PSPackageProjectCmdletHelp -ProjectRoot $ModuleRoot -ModuleName $ModuleName -Culture $Culture
+}

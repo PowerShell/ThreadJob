@@ -1,5 +1,5 @@
 ﻿#
-# Module manifest for module 'ThreadJob'
+# Module manifest for module 'Microsoft.PowerShell.ThreadJob'
 #
 
 @{
@@ -8,7 +8,7 @@
 RootModule = '.\Microsoft.PowerShell.ThreadJob.dll'
 
 # Version number of this module.
-ModuleVersion = '2.0.3'
+ModuleVersion = '2.1.0'
 
 # ID used to uniquely identify this module
 GUID = '0e7b895d-2fec-43f7-8cae-11e8d16f6e40'
@@ -40,7 +40,7 @@ and thus active threads, at a time.  If more jobs are started then they go into 
 number of jobs drops below the throttle limit.
 
 Source for this module is at GitHub.  Please submit any issues there.
-https://github.com/PaulHigin/PSThreadJob
+https://github.com/PowerShell/Modules/Modules/Microsoft.PowerShell.ThreadJob
 
 Added Runspace cleanup.
 Added Using variable expression support.
@@ -50,6 +50,7 @@ Bumped version to 2.0.0, and now only support PowerShell version 5.1 and higher.
 Fixed using keyword bug with PowerShell preview version, and removed unneeded version check.
 Added setting current working directory to running jobs, when available.
 Added help URI to module.
+Change module name to Microsoft.PowerShell.ThreadJob, add literalpath for current directory.
 "
 
 # Minimum version of the Windows PowerShell engine required by this module

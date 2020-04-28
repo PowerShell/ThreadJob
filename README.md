@@ -1,4 +1,4 @@
-# PSThreadJob
+# Microsoft.PowerShell.ThreadJob
 A PowerShell module for running concurrent jobs based on threads rather than processes
 
 PowerShell's built-in BackgroundJob jobs (Start-Job) are run in separate processes on the local machine. They provide excellent isolation but are resource heavy.  Running hundreds of BackgroundJob jobs can quickly absorb system resources by creating hundreds of processes. There is no throttling mechanism and so all jobs are started immediately and are all run currently.
@@ -46,8 +46,8 @@ TotalSeconds
 
 ## Installing
 
-You can install this module from [PowerShell Gallery](https://www.powershellgallery.com/packages/ThreadJob/1.1.2) using this command:
+You can install this module from [PowerShell Gallery](https://www.powershellgallery.com/packages/Microsoft.PowerShell.ThreadJob/1.1.2) using this command:
 
 ```powershell
-Install-Module -Name ThreadJob -Scope CurrentUser
+Install-Module -Name Microsoft.PowerShell.ThreadJob -Scope CurrentUser
 ```

@@ -61,7 +61,7 @@ steps:
   displayName: 'Run BinSkim '
   inputs:
     InputType: Basic
-    AnalyzeTarget: '$(BUILD_SOURCE)\Microsoft.PowerShell.SecretManagement\Microsoft.PowerShell.SecretManagement.dll'
+    AnalyzeTarget: '$(BUILD_SOURCE)\Microsoft.PowerShell.ThreadJob\Microsoft.PowerShell.ThreadJob.dll'
     AnalyzeSymPath: 'SRV*'
     AnalyzeVerbose: true
     AnalyzeHashes: true

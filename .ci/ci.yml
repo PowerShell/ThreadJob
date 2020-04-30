@@ -68,10 +68,13 @@ stages:
       displayName: Build and publish artifact
 
     - pwsh: |
-        Write-Host "Installing PSPackageProject module"
         Install-Module -Name PSPackageProject -Force
+        $config = Get-PSPackageProjectConfiguration
         $signSrcPath = "$($config.BuildOutputPath)\$($config.ModuleName)"
         $signOutPath = "$($config.SignedOutputPath)\$($config.ModuleName)"
+        if (! (Test-Path -Path $signOutPath)) {
+          $null = New-Item -Path $signOutPath -ItemType Directory
+        }
         Write-Host "Signed output path is: $signOutPath"
         $signXmlPath = "$($config.SourcePath)\..\sign-module-files.xml"
         # Set signing src path variable

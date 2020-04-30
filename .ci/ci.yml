@@ -68,9 +68,12 @@ stages:
       displayName: Build and publish artifact
 
     - pwsh: |
-        # Install-Module -Name PSPackageProject -Force
+        Write-Host "Installing PSPackageProject module"
+        Install-Module -Name PSPackageProject -Force
         Write-Host "Getting PS package project configuration from location: $(Resolve-Path .)"
-        try { $config = Get-PSPackageProjectConfiguration } catch { $_ }
+        try { $config = Get-PSPackageProjectConfiguration } catch { Write-Host "Error: $_" }
+        Write-Host "Build output path: $($config.BuildOutputPath)"
+        Write-Host "Build signing path: $(config.SignedOutputPath)"
         $signSrcPath = "$($config.BuildOutputPath)\$($config.ModuleName)"
         $signOutPath = "$(config.SignedOutputPath)"
         Write-Host "Signed output path is: $signOutPath"

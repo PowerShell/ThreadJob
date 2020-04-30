@@ -31,8 +31,18 @@ param (
 
     [Parameter(ParameterSetName="help")]
     [switch]
-    $UpdateHelp
+    $UpdateHelp,
+
+    [ValidateSet("Debug", "Release")]
+    [string] $BuildConfiguration = "Debug",
+
+    [ValidateSet("net461", "netcoreapp2.1", "netstandard2.0")]
+    [string] $BuildFramework = "net461"
 )
+
+if ( ! ( Get-Module -ErrorAction SilentlyContinue PSPackageProject) ) {
+    Install-Module PSPackageProject
+}
 
 $config = Get-PSPackageProjectConfiguration -ConfigPath $PSScriptRoot
 
@@ -46,6 +56,9 @@ $script:ModuleRoot = $PSScriptRoot
 $script:Culture = $config.Culture
 $script:HelpPath = $config.HelpPath
 
+$script:BuildConfiguration = $BuildConfiguration
+$script:BuildFramework = $BuildFramework
+
 if ($env:TF_BUILD) {
     $vstsCommandString = "vso[task.setvariable variable=BUILD_OUTPUT_PATH]$OutDirectory"
     Write-Host ("sending " + $vstsCommandString)
@@ -58,13 +71,9 @@ if ($env:TF_BUILD) {
 
 . $PSScriptRoot\dobuild.ps1
 
-if ( ! ( Get-Module -ErrorAction SilentlyContinue PSPackageProject) ) {
-    Install-Module PSPackageProject
-}
-
 if ($Clean -and (Test-Path $OutDirectory))
 {
-    Remove-Item -Force -Recurse $OutDirectory -ErrorAction Stop -Verbose
+    Remove-Item -Path $OutDirectory -Force -Recurse -ErrorAction Stop -Verbose
 
     if (Test-Path "${SrcPath}/code/bin")
     {

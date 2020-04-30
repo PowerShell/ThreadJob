@@ -69,8 +69,8 @@ stages:
 
     - pwsh: |
         # Install-Module -Name PSPackageProject -Force
-        Write-Host "Getting PS package project configuration"
-        $config = Get-PSPackageProjectConfiguration
+        Write-Host "Getting PS package project configuration from location: $(Resolve-Path .)"
+        try { $config = Get-PSPackageProjectConfiguration } catch { $_ }
         $signSrcPath = "$($config.BuildOutputPath)\$($config.ModuleName)"
         $signOutPath = "$(config.SignedOutputPath)"
         Write-Host "Signed output path is: $signOutPath"

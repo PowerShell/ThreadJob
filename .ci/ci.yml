@@ -73,7 +73,7 @@ stages:
         Write-Host "Getting PS package project configuration from location: $(Resolve-Path .)"
         try { $config = Get-PSPackageProjectConfiguration } catch { Write-Host "Error: $_" }
         Write-Host "Build output path: $($config.BuildOutputPath)"
-        Write-Host "Build signing path: $(config.SignedOutputPath)"
+        try { Write-Host "Build signing path: $(config.SignedOutputPath)" } catch { Write-Host "Error: $_" }
         $signSrcPath = "$($config.BuildOutputPath)\$($config.ModuleName)"
         $signOutPath = "$(config.SignedOutputPath)"
         Write-Host "Signed output path is: $signOutPath"

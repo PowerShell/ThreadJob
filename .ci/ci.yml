@@ -68,7 +68,8 @@ stages:
       displayName: Build and publish artifact
 
     - pwsh: |
-        Install-Module -Name PSPackageProject -Force
+        # Install-Module -Name PSPackageProject -Force
+        Write-Host "Getting PS package project configuration"
         $config = Get-PSPackageProjectConfiguration
         $signSrcPath = "$($config.BuildOutputPath)\$($config.ModuleName)"
         $signOutPath = "$(config.SignedOutputPath)"

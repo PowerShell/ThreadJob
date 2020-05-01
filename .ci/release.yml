@@ -1,7 +1,7 @@
 parameters:
   jobName: release
   imageName: windows-2019
-  displayName: Release Microsoft.PowerShell.ThreadJob to NuGet
+  displayName: 'Release Microsoft.PowerShell.ThreadJob to NuGet'
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -20,10 +20,7 @@ jobs:
 
   - pwsh: |
       Get-ChildItem -Recurse $(System.ArtifactsDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg
-    displayName: Capture downloaded artifact
-
-  - task: NuGetToolInstaller@1
-    displayName: 'Install NuGet'
+    displayName: 'Capture downloaded artifact'
 
   -task: 
     displayName: 'Push PSThreadJob artifacts to AzArtifactsFeed

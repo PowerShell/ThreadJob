@@ -19,7 +19,7 @@ jobs:
       downloadPath: '$(System.ArtifactsDirectory)'
 
   - powershell: |
-    Get-ChildItem "$(Build.ArtifactStagingDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg"
+      Get-ChildItem "$(Build.ArtifactStagingDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg"
     displayName: 'Capture NuGet package'
 
   -task: NuGetCommand@2

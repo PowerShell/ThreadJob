@@ -23,7 +23,7 @@ jobs:
     displayName: 'Capture downloaded artifact'
 
   -task: 
-    displayName: 'Push PSThreadJob artifacts to AzArtifactsFeed
+    displayName: 'Push PSThreadJob artifacts to AzArtifactsFeed'
     inputs:
       command: push
       packagesToPush: '$(System.ArtifactsDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg'

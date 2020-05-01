@@ -18,9 +18,9 @@ jobs:
       itemPattern: '**/*.nupkg'
       downloadPath: '$(System.ArtifactsDirectory)'
 
-  - pwsh: |
-      Get-ChildItem -Recurse "$(System.ArtifactsDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg"
-    displayName: 'Capture downloaded artifact'
+  - powershell: |
+    Get-ChildItem "$(Build.ArtifactStagingDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg"
+    displayName: 'Capture NuGet package'
 
   -task: NuGetCommand@2
     displayName: 'Push PSThreadJob artifacts to AzArtifactsFeed'

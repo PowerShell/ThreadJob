@@ -27,4 +27,4 @@ jobs:
       command: push
       packagesToPush: $(System.ArtifactsDirectory)\nupkg\*.nupkg
       nuGetFeedType: external
-      publishFeedCredentials:
+      publishFeedCredentials: 'PowerShellNuGetOrgPush'

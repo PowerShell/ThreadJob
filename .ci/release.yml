@@ -19,10 +19,10 @@ jobs:
       downloadPath: '$(System.ArtifactsDirectory)'
 
   - powershell: |
-      Get-ChildItem "$(Build.ArtifactStagingDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg"
+      Get-ChildItem '$(Build.ArtifactStagingDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg'
     displayName: 'Capture NuGet package'
 
-  -task: NuGetCommand@2
+  - task: NuGetCommand@2
     displayName: 'Push PSThreadJob artifacts to AzArtifactsFeed'
     inputs:
       command: push

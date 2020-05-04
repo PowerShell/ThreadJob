@@ -18,6 +18,9 @@ jobs:
       itemPattern: '**/*.nupkg'
       downloadPath: '$(System.ArtifactsDirectory)'
 
+  - task: NuGetToolInstaller@1
+    displayName: 'Install NuGet'
+
   - powershell: |
       Get-ChildItem '$(Build.ArtifactStagingDirectory)/Microsoft.PowerShell.ThreadJob.*.nupkg'
     displayName: 'Capture NuGet package'

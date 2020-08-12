@@ -11,7 +11,8 @@ jobs:
   displayName: ${{ parameters.displayName }}
   steps:
   - ${{ parameters.powershellExecutable }}: |
-      Install-Module -Name "platyPS","Pester" -Force
+      Install-Module -Name "platyPS" -Force
+      Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
     displayName: Install dependencies
 
   - ${{ parameters.powershellExecutable }}: |

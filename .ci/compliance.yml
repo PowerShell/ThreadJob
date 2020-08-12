@@ -10,7 +10,8 @@ steps:
   displayName: Install PowerShell Core
 
 - pwsh: |
-    Install-Module -Name "platyPS","Pester" -Force
+    Install-Module -Name "platyPS"
+    Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
   displayName: Install platyPS
 
 - pwsh: |

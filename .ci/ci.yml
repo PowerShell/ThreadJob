@@ -55,7 +55,8 @@ stages:
       displayName: Import PowerShellGet Module
 
     - pwsh: |
-        Install-Module -Name "platyPS","Pester" -Force
+        Install-Module -Name "platyPS" -Force
+        Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
       displayName: Install dependencies
     - pwsh: |
         Install-Module -Name "PSScriptAnalyzer" -RequiredVersion 1.18.0 -Force

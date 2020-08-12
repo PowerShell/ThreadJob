@@ -12,6 +12,7 @@ jobs:
   steps:
   - ${{ parameters.powershellExecutable }}: |
       Install-Module -Name "platyPS" -Force
+      Uninstall-Module -Name "Pester" -MinimumVersion 5.0 -Force -ErrorAction SilentlyContinue
       Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
     displayName: Install dependencies
 

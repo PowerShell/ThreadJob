@@ -32,10 +32,14 @@ jobs:
     displayName: Install PSPackageProject module
 
   - ${{ parameters.powershellExecutable }}: |
-      dir $env:USERPROFILE\Documents\PowerShell\Modules\Pester* -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -Verbose -ErrorAction SilentlyContinue
-      Install-Module -Name Pester -MaximumVersion 4.11 -Force
-      Import-Module -Name Pester -MaximumVersion 4.11 -Force
-
+      Get-Module -Name Pester -ListAvailable | where { $_.Version.Major -ge 5 } | foreach {
+          $modPath = $_.Path | Split-Path -Parent
+          Remove-Item -Path $modPath -Recurse -Force -ErrorAction SilentlyContinue -ErrorVariable ev
+          if ($ev -ne $null) {
+            Write-Verbose -Verbose -Message "Error removing Pester: $ev"
+          }
+        }
+        Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
     displayName: Install Pester 4.0 dependency only
 
   - ${{ parameters.powershellExecutable }}: |

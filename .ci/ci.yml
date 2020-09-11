@@ -37,7 +37,7 @@ stages:
     - task: PkgESSetupBuild@10
       displayName: 'Package ES - Setup Build'
       inputs:
-        productName: PSRemotingTools
+        productName: PSThreadJob
         useDfs: false
 
     - pwsh: |
@@ -50,21 +50,31 @@ stages:
       displayName: Clean PowerShell modules directory
 
     - pwsh: |
-        Get-Module -Name PowerShellGet -ListAvailable
-        Import-Module -Name PowerShellGet
+        Install-Module PowerShellGet -MinimumVersion 3.0.0-beta10 -AllowPrerelease -Force
+        Import-Module PowerShellGet -RequiredVersion 3.0.0 -Force -PassThru
       displayName: Import PowerShellGet Module
 
     - pwsh: |
         Install-Module -Name "platyPS" -Force
-        Uninstall-Module -Name "Pester" -MinimumVersion 5.0 -Force -ErrorAction SilentlyContinue
-        Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
-      displayName: Install dependencies
+      displayName: Install platyPS dependency
+
     - pwsh: |
         Install-Module -Name "PSScriptAnalyzer" -RequiredVersion 1.18.0 -Force
       displayName: Install PSScriptAnalyzer
+
     - pwsh: |
-        Install-Module -Name PSPackageProject -Force
+        Install-Module -Name PSPackageProject -MinimumVersion 0.1.15 -Force
       displayName: Install PSPackageProject module
+
+    - pwsh: |
+        dir $env:USERPROFILE\Documents\PowerShell\Modules\Pester* -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -Verbose -ErrorAction SilentlyContinue
+        Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
+      displayName: Install Pester 4.0 dependency only
+
+    - pwsh: |
+        Get-Module -Name Pester -ListAvailable
+      displayName: Capture Pester module environment
+
     - pwsh: |
         $(Build.SourcesDirectory)/build.ps1 -Build -BuildConfiguration Release
       displayName: Build and publish artifact
@@ -111,8 +121,15 @@ stages:
       condition: and(and(succeeded(), eq(variables['Build.Reason'], 'Manual')), ne(variables['SkipSigning'], 'True'))
 
     - pwsh: |
-        $(Build.SourcesDirectory)/build.ps1 -Publish -Signed
-      displayName: Create signed artifact
+        if ($env:SkipSigning -eq 'True')
+        {
+          $(Build.SourcesDirectory)/build.ps1 -Publish
+        }
+        else
+        {
+          $(Build.SourcesDirectory)/build.ps1 -Publish -Signed
+        }
+      displayName: Create module artifact
 
 - stage: Compliance
   displayName: Compliance

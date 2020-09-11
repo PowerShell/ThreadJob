@@ -10,9 +10,11 @@ steps:
   displayName: Install PowerShell Core
 
 - pwsh: |
+    dir $env:USERPROFILE\Documents\PowerShell\Modules\* -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -Verbose -ErrorAction SilentlyContinue
+  displayName: Remove all user profile PowerShell modules
+
+- pwsh: |
     Install-Module -Name "platyPS" -Force
-    Uninstall-Module -Name "Pester" -MinimumVersion 5.0 -Force -ErrorAction SilentlyContinue
-    Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
   displayName: Install platyPS
 
 - pwsh: |
@@ -20,7 +22,12 @@ steps:
   displayName: Install PSScripAnalyzer
 
 - pwsh: |
-    Install-Module -Name PSPackageProject -Force
+    Install-Module PowerShellGet -MinimumVersion 3.0.0-beta10 -AllowPrerelease -Force
+    Import-Module PowerShellGet -RequiredVersion 3.0.0 -Force -PassThru
+  displayName: Import PowerShellGet Module
+
+- pwsh: |
+    Install-Module -Name PSPackageProject -MinimumVersion 0.1.15 -Force
   displayName: Install PSPackageProject module
 
 - task: DownloadBuildArtifacts@0
@@ -33,12 +40,15 @@ steps:
 
 - pwsh: |
     $sourceName = 'pspackageproject-local-repo'
-    Register-PSRepository -Name $sourceName -SourceLocation '$(System.ArtifactsDirectory)' -ErrorAction Ignore
+    Register-PackageSource -Name $sourceName -Location "$(System.ArtifactsDirectory)" -ProviderName PowerShellGet -Force -ErrorAction Ignore
+    Get-PackageSource -Name $sourceName
     $config = Get-PSPackageProjectConfiguration
     $buildOutputPath = $config.BuildOutputPath
     $null = New-Item -ItemType Directory -Path $buildOutputPath -Verbose
     $moduleName = $config.ModuleName
-    Save-Module -Repository $sourceName -Name $moduleName -Path $config.BuildOutputPath
+    Write-Verbose -Verbose "Saving package $sourceName to $($config.BuildOutputPath)"
+    Save-Package -Name $moduleName -Source $sourceName -ProviderName PowerShellGet -Path $config.BuildOutputPath -AllowPrereleaseVersions -Force
+    Write-Verbose -Verbose "Writing BUILD_SOURCE variable"
     $vstsCommandString = "vso[task.setvariable variable=BUILD_SOURCE]$($config.BuildOutputPath)"
     Write-Host "sending " + $vstsCommandString
     Write-Host "##$vstsCommandString"

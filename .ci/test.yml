@@ -33,7 +33,9 @@ jobs:
 
   - ${{ parameters.powershellExecutable }}: |
       dir $env:USERPROFILE\Documents\PowerShell\Modules\Pester* -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -Verbose -ErrorAction SilentlyContinue
-      Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
+      Install-Module -Name Pester -MaximumVersion 4.11 -Force
+      Import-Module -Name Pester -MaximumVersion 4.11 -Force
+
     displayName: Install Pester 4.0 dependency only
 
   - ${{ parameters.powershellExecutable }}: |

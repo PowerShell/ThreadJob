@@ -12,12 +12,13 @@ pr:
 
 stages:
 - stage: Build
-  displayName: Build PowerShell Package
+  displayName: Build PSThreadJob Package
   jobs:
   - job: BuildPkg
     displayName: Build Package
     pool:
       name: Package ES CodeHub Lab E
+    
     steps:
     - powershell: |
         $powerShellPath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'powershell'
@@ -39,6 +40,8 @@ stages:
       inputs:
         productName: PSThreadJob
         useDfs: false
+        branchVersion: true
+        disableMsbuildVersion: true
 
     - pwsh: |
         Get-ChildItem -Path env:
@@ -46,47 +49,48 @@ stages:
       condition: succeededOrFailed()
 
     - pwsh: |
-        dir $env:USERPROFILE\Documents\PowerShell\Modules\* -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -Verbose -ErrorAction SilentlyContinue
-      displayName: Clean PowerShell modules directory
-
-    - pwsh: |
-        Install-Module PowerShellGet -MinimumVersion 3.0.0-beta10 -AllowPrerelease -Force
-        Import-Module PowerShellGet -RequiredVersion 3.0.0 -Force -PassThru
-      displayName: Import PowerShellGet Module
-
-    - pwsh: |
-        Install-Module -Name "platyPS" -Force
-      displayName: Install platyPS dependency
-
-    - pwsh: |
-        Install-Module -Name "PSScriptAnalyzer" -RequiredVersion 1.18.0 -Force
-      displayName: Install PSScriptAnalyzer
-
-    - pwsh: |
-        Install-Module -Name PSPackageProject -MinimumVersion 0.1.15 -Force
-      displayName: Install PSPackageProject module
-
-    - pwsh: |
-        Get-Module -Name Pester -ListAvailable | where { $_.Version.Major -ge 5 } | foreach {
-          $modPath = $_.Path | Split-Path -Parent
-          Remove-Item -Path $modPath -Recurse -Force -ErrorAction SilentlyContinue -ErrorVariable ev
-          if ($ev -ne $null) {
-            Write-Verbose -Verbose -Message "Error removing Pester: $ev"
-          }
+        $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+        if (Test-Path -Path $modulePath) {
+          Write-Verbose -Verbose "Deleting existing temp module path: $modulePath"
+          Remove-Item -Path $modulePath -Recurse -Force -ErrorAction Ignore
         }
-        Install-Module -Name "Pester" -MaximumVersion 4.99 -Force
-      displayName: Install Pester 4.0 dependency only
+        if (! (Test-Path -Path $modulePath)) {
+          Write-Verbose -Verbose "Creating new temp module path: $modulePath"
+          $null = New-Item -Path $modulePath -ItemType Directory
+        }
+      displayName: Create temporary module path
 
     - pwsh: |
-        Get-Module -Name Pester -ListAvailable
-      displayName: Capture Pester module environment
+        $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+        Write-Verbose -Verbose "Install PowerShellGet V3 to temp module path"
+        Save-Module -Name PowerShellGet -Path $modulePath -MinimumVersion 3.0.0-beta10 -AllowPrerelease -Force
+        Write-Verbose -Verbose "Install PlatyPS to temp module path"
+        Save-Module -Name "platyPS" -Path $modulePath -Force
+        Write-Verbose -Verbose "Install PSScriptAnalyzer to temp module path"
+        Save-Module -Name "PSScriptAnalyzer" -Path $modulePath -RequiredVersion 1.18.0 -Force
+        Write-Verbose -Verbose "Install Pester 4.X to temp module path"
+        Save-Module -Name "Pester" -MaximumVersion 4.99 -Path $modulePath -Force
+        Write-Verbose -Verbose "Install PSPackageProject to temp module path"
+        Save-Module -Name PSPackageProject -Path $modulePath -Force
+      displayName: Install PSPackageProject and dependencies
 
     - pwsh: |
-        $(Build.SourcesDirectory)/build.ps1 -Build -BuildConfiguration Release
+        $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+        $env:PSModulePath = $modulePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
+        $modPath = Join-Path -Path $modulePath -ChildPath PSPackageProject
+        Write-Verbose -Verbose "Importing PSPackageProject from: $modPath"
+        Import-Module -Name $modPath -Force
+        #
+        $(Build.SourcesDirectory)/build.ps1 -Build -Clean -BuildConfiguration Release
       displayName: Build and publish artifact
 
     - pwsh: |
-        Install-Module -Name PSPackageProject -Force
+        $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+        $env:PSModulePath = $modulePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
+        $modPath = Join-Path -Path $modulePath -ChildPath PSPackageProject
+        Write-Verbose -Verbose "Importing PSPackageProject from: $modPath"
+        Import-Module -Name $modPath -Force
+        #
         $config = Get-PSPackageProjectConfiguration
         $signSrcPath = "$($config.BuildOutputPath)\$($config.ModuleName)"
         $signOutPath = "$($config.SignedOutputPath)\$($config.ModuleName)"
@@ -127,6 +131,12 @@ stages:
       condition: and(and(succeeded(), eq(variables['Build.Reason'], 'Manual')), ne(variables['SkipSigning'], 'True'))
 
     - pwsh: |
+        $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+        $env:PSModulePath = $modulePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
+        $modPath = Join-Path -Path $modulePath -ChildPath PSPackageProject
+        Write-Verbose -Verbose "Importing PSPackageProject from: $modPath"
+        Import-Module -Name $modPath -Force
+        #
         if ($env:SkipSigning -eq 'True')
         {
           $(Build.SourcesDirectory)/build.ps1 -Publish

@@ -9,27 +9,6 @@ steps:
     Write-Host "##$vstsCommandString"
   displayName: Install PowerShell Core
 
-- pwsh: |
-    dir $env:USERPROFILE\Documents\PowerShell\Modules\* -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -Verbose -ErrorAction SilentlyContinue
-  displayName: Remove all user profile PowerShell modules
-
-- pwsh: |
-    Install-Module -Name "platyPS" -Force
-  displayName: Install platyPS
-
-- pwsh: |
-      Install-Module -Name "PSScriptAnalyzer" -RequiredVersion 1.18.0 -Force
-  displayName: Install PSScripAnalyzer
-
-- pwsh: |
-    Install-Module PowerShellGet -MinimumVersion 3.0.0-beta10 -AllowPrerelease -Force
-    Import-Module PowerShellGet -RequiredVersion 3.0.0 -Force -PassThru
-  displayName: Import PowerShellGet Module
-
-- pwsh: |
-    Install-Module -Name PSPackageProject -MinimumVersion 0.1.15 -Force
-  displayName: Install PSPackageProject module
-
 - task: DownloadBuildArtifacts@0
   displayName: 'Download artifacts'
   inputs:
@@ -39,6 +18,38 @@ steps:
     downloadPath: '$(System.ArtifactsDirectory)'
 
 - pwsh: |
+    Get-ChildItem -Path "$(System.ArtifactsDirectory)" -Recurse
+  displayName: Capture artifacts directory
+
+- pwsh: |
+    $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+    if (Test-Path -Path $modulePath) {
+      Write-Verbose -Verbose "Deleting existing temp module path: $modulePath"
+      Remove-Item -Path $modulePath -Recurse -Force -ErrorAction Ignore
+    }
+    if (! (Test-Path -Path $modulePath)) {
+      Write-Verbose -Verbose "Creating new temp module path: $modulePath"
+      $null = New-Item -Path $modulePath -ItemType Directory
+    }
+  displayName: Create temporary module path
+
+- pwsh: |
+    $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+    Write-Verbose -Verbose "Install PowerShellGet V3 to temp module path"
+    Save-Module -Name PowerShellGet -Path $modulePath -MinimumVersion 3.0.0-beta10 -AllowPrerelease -Force
+    Write-Verbose -Verbose "Install PlatyPS to temp module path"
+    Save-Module -Name "platyPS" -Path $modulePath -Force
+    Write-Verbose -Verbose "Install PSScriptAnalyzer to temp module path"
+    Save-Module -Name "PSScriptAnalyzer" -Path $modulePath -RequiredVersion 1.18.0 -Force
+    Write-Verbose -Verbose "Install Pester 4.X to temp module path"
+    Save-Module -Name "Pester" -MaximumVersion 4.99 -Path $modulePath -Force
+    Write-Verbose -Verbose "Install PSPackageProject to temp module path"
+    Save-Module -Name PSPackageProject -Path $modulePath -Force
+  displayName: Install PSPackageProject and dependencies
+
+- pwsh: |
+    $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+    $env:PSModulePath = $modulePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
     $sourceName = 'pspackageproject-local-repo'
     Register-PackageSource -Name $sourceName -Location "$(System.ArtifactsDirectory)" -ProviderName PowerShellGet -Force -ErrorAction Ignore
     Get-PackageSource -Name $sourceName
@@ -55,9 +66,17 @@ steps:
   displayName: Extract product artifact
 
 - pwsh: |
+    $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'
+    $env:PSModulePath = $modulePath + [System.IO.Path]::PathSeparator + $env:PSModulePath
     $config = Get-PSPackageProjectConfiguration
     dir "$($config.BuildOutputPath)/*" -r 2>$null
   displayName: 'BuildOutputPath directory'
+
+- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  displayName: 'Component Detection'
+  inputs:
+    sourceScanPath: '$(Build.SourcesDirectory)'
+    snapshotForceEnabled: true
 
 - task: securedevelopmentteam.vss-secure-development-tools.build-task-antimalware.AntiMalware@3
   displayName: 'Run Defender Scan'
@@ -120,3 +139,8 @@ steps:
     CredScan: true
     PoliCheck: true
     PoliCheckBreakOn: Severity2Above
+
+- pwsh: |
+    Unregister-PSRepository -Name 'pspackageproject-local-repo' -ErrorAction Ignore
+  displayName: Unregister temporary PSRepository
+  condition: always()

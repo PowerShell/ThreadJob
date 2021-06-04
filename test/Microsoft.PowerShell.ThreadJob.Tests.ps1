@@ -302,7 +302,14 @@ Describe 'Basic ThreadJob Tests' -Tags 'CI' {
         }
 '@
 
-        $result = & "$PSHOME/pwsh" -c $script
+        if ($PSVersionTable.PSVersion.Major -eq 5)
+        {
+            $result = & "$PSHOME/powershell" -c $script
+        }
+        else
+        {
+            $result = & "$PSHOME/pwsh" -c $script
+        }
         $result | Should -BeExactly "True"
     }
 
@@ -339,7 +346,14 @@ Describe 'Basic ThreadJob Tests' -Tags 'CI' {
         Write-Output (@(Get-Runspace).Count -eq $rsStartCount)
 '@
 
-        $result = & "$PSHOME/pwsh" -c $script
+        if ($PSVersionTable.PSVersion.Major -eq 5)
+        {
+            $result = & "$PSHOME/powershell" -c $script
+        }
+        else
+        {
+            $result = & "$PSHOME/pwsh" -c $script
+        }
         $result | Should -BeExactly "True","True","True"
     }
 

@@ -27,6 +27,11 @@ Describe 'Basic ThreadJob Tests' -Tags 'CI' {
 
     BeforeAll {
 
+        function Test-WindowsPowerShell
+        {
+            return ($PSVersionTable.PSVersion.Major -eq 5)
+        }
+
         $scriptFilePath1 = Join-Path $testdrive "TestThreadJobFile1.ps1"
         @'
         for ($i=0; $i -lt 10; $i++)
@@ -274,7 +279,7 @@ Describe 'Basic ThreadJob Tests' -Tags 'CI' {
         Get-Job | Where-Object PSJobTypeName -eq "ThreadJob" | Should -HaveCount 0
     }
 
-    It 'ThreadJob Runspaces should be cleaned up at completion' {
+    It 'ThreadJob Runspaces should be cleaned up at completion' -Skip:(Test-WindowsPowerShell) {
 
         $script = $WaitForCountFnScript + @'
 
@@ -302,18 +307,11 @@ Describe 'Basic ThreadJob Tests' -Tags 'CI' {
         }
 '@
 
-        if ($PSVersionTable.PSVersion.Major -eq 5)
-        {
-            $result = & "$PSHOME/powershell" -c $script
-        }
-        else
-        {
-            $result = & "$PSHOME/pwsh" -c $script
-        }
+        $result = & "$PSHOME/pwsh" -c $script
         $result | Should -BeExactly "True"
     }
 
-    It 'ThreadJob Runspaces should be cleaned up after job removal' {
+    It 'ThreadJob Runspaces should be cleaned up after job removal' -Skip:(Test-WindowsPowerShell) {
 
     $script = $WaitForCountFnScript + @'
 
@@ -346,14 +344,7 @@ Describe 'Basic ThreadJob Tests' -Tags 'CI' {
         Write-Output (@(Get-Runspace).Count -eq $rsStartCount)
 '@
 
-        if ($PSVersionTable.PSVersion.Major -eq 5)
-        {
-            $result = & "$PSHOME/powershell" -c $script
-        }
-        else
-        {
-            $result = & "$PSHOME/pwsh" -c $script
-        }
+        $result = & "$PSHOME/pwsh" -c $script
         $result | Should -BeExactly "True","True","True"
     }
 

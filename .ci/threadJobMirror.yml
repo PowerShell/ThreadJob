@@ -10,7 +10,7 @@ schedules:
 - cron: 0 8 * * *
   branches:
     include:
-    - refs/heads/ghmaster
+    - refs/heads/master
   always: true
 
 resources:
@@ -18,7 +18,7 @@ resources:
     - repository: ThreadJob
       type: git
       name: ThreadJob
-      ref: ghmaster
+      ref: master
     - repository: ThreadJob-gh
       ref: master
       type: github

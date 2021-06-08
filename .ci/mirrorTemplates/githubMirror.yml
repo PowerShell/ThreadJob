@@ -83,7 +83,7 @@ stages:
 
             Write-verbose -message 'Checkout master branch as github master' -verbose
             git checkout --quiet -b master github/master
-        displayName: Checkout GitHub master branch as LatestGH
+        displayName: Checkout GitHub master branch as master
         workingDirectory: '$(repoPath)'
 
       - pwsh: |

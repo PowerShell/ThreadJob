@@ -30,6 +30,17 @@ function DoBuild
         # build code and place it in the staging location
         Push-Location "${SrcPath}/code"
         try {
+            # Check for dotnet for Windows (we only build on Windows platforms).
+            if ($null -eq (Get-Command -Name 'dotnet.exe' -ErrorAction Ignore)) {
+                $dotnetCommandPath = Join-Path -Path $env:ProgramFiles -ChildPath "dotnet"
+                $dotnetCommand = Join-Path -Path $dotnetCommandPath -ChildPath "dotnet.exe"
+                if ($null -eq (Get-Command -Name $dotnetCommand -ErrorAction Ignore)) {
+                    throw "Dotnet.exe cannot be found: $dotnetCommand is unavailable for build."
+                }
+
+                $env:PATH = $dotnetCommandPath + [IO.Path]::PathSeparator + $env:PATH
+            }
+
             # Check dotnet version
             Write-Verbose -Verbose -Message "DotNet version: $(dotnet --version)"
 

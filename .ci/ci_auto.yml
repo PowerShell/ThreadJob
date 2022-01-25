@@ -34,8 +34,8 @@ stages:
 
     steps:
 
-    - task: UseDotNet@2
-      displayName: 'Installing .NET Core SDK'
+    #- task: UseDotNet@2
+    #  displayName: 'Installing .NET Core SDK'
 
     - pwsh: |
         $modulePath = Join-Path -Path $env:AGENT_TEMPDIRECTORY -ChildPath 'TempModules'

@@ -42,6 +42,8 @@ function DoBuild
                     throw "Dotnet.exe cannot be found: $dotnetCommandPath is unavailable for build."
                 }
             }
+            
+            Write-Verbose -Verbose -Message "dotnet.exe command found in path: $($dotnetCommand.Path)"
 
             # Check dotnet version
             Write-Verbose -Verbose -Message "DotNet version: $(& ($dotnetCommand) --version)"
@@ -71,6 +73,7 @@ function DoBuild
             }
         }
         catch {
+            WriteVerbose -Verbose -Message "dotnet build failed with error: $_"
             Write-Error "dotnet build failed with error: $_"
         }
         finally {

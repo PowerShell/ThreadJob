@@ -77,7 +77,7 @@ function DoBuild
             Write-Verbose -Verbose -Message "Copying implementation assembly $BuildSrcPath/${ModuleName}.dll to $BuildOutPath"
             Copy-Item "$BuildSrcPath/${ModuleName}.dll" -Dest "$BuildOutPath"
             
-            if (Test-Path -Path "$BuildSrcPath/${ModuleName}.pdb")
+            if ((Test-Path -Path "$BuildSrcPath/${ModuleName}.pdb") -and ($script:BuildConfiguration -ne 'Release'))
             {
                 Write-Verbose -Verbose -Message "Copying implementation pdb $BuildSrcPath/${ModuleName}.pdb to $BuildOutPath"
                 Copy-Item -Path "$BuildSrcPath/${ModuleName}.pdb" -Dest "$BuildOutPath"

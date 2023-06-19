@@ -8,7 +8,7 @@
 RootModule = '.\Microsoft.PowerShell.ThreadJob.dll'
 
 # Version number of this module.
-ModuleVersion = '2.1.0'
+ModuleVersion = '2.1.1'
 
 # ID used to uniquely identify this module
 GUID = 'a84b375d-c1d6-4a1c-bcb7-8059bc28cd98'

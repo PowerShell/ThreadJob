@@ -52,3 +52,11 @@ You can install this module from [PowerShell Gallery](https://www.powershellgall
 ```powershell
 Install-Module -Name ThreadJob -Scope CurrentUser
 ```
+
+## Code of Conduct
+
+Please see our [Code of Conduct](.github/CODE_OF_CONDUCT.md) before participating in this project.
+
+## Security Policy
+
+For any security issues, please see our [Security Policy](.github/SECURITY.md).

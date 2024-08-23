@@ -22,8 +22,8 @@ param (
     [ValidateSet("Debug", "Release")]
     [string] $BuildConfiguration = "Debug",
 
-    [ValidateSet("net461")]
-    [string] $BuildFramework = "net461"
+    [ValidateSet("netstandard2.0")]
+    [string] $BuildFramework = "netstandard2.0"
 )
 
 Import-Module -Name "$PSScriptRoot/buildtools.psd1" -Force
@@ -31,8 +31,10 @@ Import-Module -Name "$PSScriptRoot/buildtools.psd1" -Force
 $config = Get-BuildConfiguration -ConfigPath $PSScriptRoot
 
 $script:ModuleName = $config.ModuleName
+$script:ProxyModuleName = $config.ProxyModuleName
 $script:SrcPath = $config.SourcePath
 $script:OutDirectory = $config.BuildOutputPath
+$script:ProxyOutDirectory = $config.BuildOutputPath
 $script:SignedDirectory = $config.SignedOutputPath
 $script:TestPath = $config.TestPath
 
@@ -53,7 +55,7 @@ if ($env:TF_BUILD) {
     Write-Host "##$vstsCommandString"
 }
 
-. $PSScriptRoot/dobuild.ps1
+. $PSScriptRoot/doBuild.ps1
 
 if ($Clean -and (Test-Path $OutDirectory))
 {
@@ -73,6 +75,7 @@ if ($Clean -and (Test-Path $OutDirectory))
 if (-not (Test-Path $OutDirectory))
 {
     $script:OutModule = New-Item -ItemType Directory -Path (Join-Path $OutDirectory $ModuleName)
+    $script:ProxyOutModule = New-Item -itemType Directory -Path (Join-Path $OutDirectory $ProxyModuleName)
 }
 else
 {

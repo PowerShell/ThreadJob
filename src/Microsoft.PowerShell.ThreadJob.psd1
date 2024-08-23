@@ -8,7 +8,7 @@
 RootModule = '.\Microsoft.PowerShell.ThreadJob.dll'
 
 # Version number of this module.
-ModuleVersion = '2.1.1'
+ModuleVersion = '2.2.0'
 
 # ID used to uniquely identify this module
 GUID = 'a84b375d-c1d6-4a1c-bcb7-8059bc28cd98'
@@ -42,8 +42,6 @@ number of jobs drops below the throttle limit.
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '5.1'
-DotNetFrameworkVersion = '4.6.1'
-CLRVersion = '4.0.0'
 
 # Cmdlets to export from this module
 CmdletsToExport = 'Start-ThreadJob'
@@ -79,7 +77,5 @@ PrivateData = @{
     } # End of PSData hashtable
 
 } # End of PrivateData hashtable
-
-HelpInfoURI = 'https://go.microsoft.com/fwlink/?linkid=2113345'
 
 }

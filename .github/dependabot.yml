@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget" # See documentation for possible values
+    directory: "/src/code" # Location of package manifests
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: daily

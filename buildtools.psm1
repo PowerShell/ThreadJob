@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 $ConfigurationFileName = 'package.config.json'
-Import-Module -Name PowerShellGet -MinimumVersion 3.0.18
+Import-Module -Name Microsoft.PowerShell.PSResourceGet -Force
 
 function Get-BuildConfiguration {
     [CmdletBinding()]
@@ -36,6 +36,7 @@ function Get-BuildConfiguration {
     $configObj.TestPath = Join-Path $projectRoot -ChildPath $configObj.TestPath
     $configObj.HelpPath = Join-Path $projectRoot -ChildPath $configObj.HelpPath
     $configObj.BuildOutputPath = Join-Path $projectRoot -ChildPath $configObj.BuildOutputPath
+
     if ($configObj.SignedOutputPath) {
         $configObj.SignedOutputPath = Join-Path $projectRoot -ChildPath $configObj.SignedOutputPath
     }
@@ -69,32 +70,28 @@ function Publish-ModulePackage
     )
 
     Write-Verbose -Verbose -Message "Creating new local package repo"
+    $config = Get-BuildConfiguration
     $localRepoName = 'packagebuild-local-repo'
-    $localRepoLocation = Join-Path -Path ([System.io.path]::GetTempPath()) -ChildPath $localRepoName
-    if (Test-Path -Path $localRepoLocation) {
-        Remove-Item -Path $localRepoLocation -Recurse -Force -ErrorAction Ignore
-    }
-    $null = New-Item -Path $localRepoLocation -ItemType Directory -Force
+    $localRepoLocation = $config.BuildOutputPath
 
     Write-Verbose -Verbose -Message "Registering local package repo: $localRepoName"
     Register-PSResourceRepository -Name $localRepoName -Uri $localRepoLocation -Trusted -Force
 
     Write-Verbose -Verbose -Message "Publishing package to local repo: $localRepoName"
-    $config = Get-BuildConfiguration
-    if (! $Signed.IsPresent) {
-        $modulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ModuleName
-    } else {
-        $modulePath = Join-Path -Path $config.SignedOutputPath -ChildPath $config.ModuleName
-    }
+    $modulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ModuleName
+
+    # Proxy module
+    Write-Verbose -Verbose -Message "Publishing proxy module to local repo: $localRepoName"
+    $proxyModulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ProxyModuleName
+    Publish-PSResource -Path $proxyModulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
+
+    # Official module
+    Write-Verbose -Verbose -Message "Publishing official module to local repo: $localRepoName"
     Publish-PSResource -Path $modulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
 
-    if ($env:TF_BUILD) {
-        Write-Verbose -Verbose -Message "Uploading module nuget package artifact to AzDevOps"
-        $artifactName = "nupkg"
-        $artifactPath = (Get-ChildItem -Path $localRepoLocation -Filter "$($config.ModuleName)*.nupkg").FullName
-        $artifactPath = Resolve-Path -Path $artifactPath
-        Write-Host "##vso[artifact.upload containerfolder=$artifactName;artifactname=$artifactName;]$artifactPath"
-    }
+    $artifactPath = (Get-ChildItem -Path $localRepoLocation -Filter "$($config.ModuleName)*.nupkg").FullName
+    $artifactPath = Resolve-Path -Path $artifactPath
+    Write-Verbose -Verbose -Message "ArtifactPath: $artifactPath"
 
     Write-Verbose -Verbose -Message "Unregistering local package repo: $localRepoName"
     Unregister-PSResourceRepository -Name $localRepoName -Confirm:$false

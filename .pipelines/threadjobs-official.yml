@@ -1,28 +1,29 @@
-#################################################################################
-#                               OneBranch Pipelines                             #
-# This pipeline was created by EasyStart from a sample located at:              #
-#   https://aka.ms/obpipelines/easystart/samples                                #
-# Documentation:  https://aka.ms/obpipelines                                    #
-# Yaml Schema:    https://aka.ms/obpipelines/yaml/schema                        #
-# Retail Tasks:   https://aka.ms/obpipelines/tasks                              #
-# Support:        https://aka.ms/onebranchsup                                   #
-#################################################################################
+name: ThreadJob-ModuleBuild-$(Build.BuildId)
+trigger: none
+pr: none
 
-trigger: none  # https://aka.ms/obpipelines/triggers
+schedules:
+- cron: '0 3 * * 1'
+  displayName: Weekly Build
+  branches:
+    include:
+    - onebranch-pipelines
+  always: true
 
-# global parameteres are configured here and show up in AzDO UI in build queue time. Required for MSBuild and .NET.
-# learn more at https://aka.ms/obpipelines/parameters
-# parameters:
-# - name: 'debug'
-#  displayName: 'Enable debug output'
-#  type: boolean
-#  default: false
+parameters:
+  - name: 'publishToPowerShellGallery'
+    displayName: 'Publish module to PowerShell gallery'
+    type: boolean
+    default: false
 
 variables:
-  CDP_DEFINITION_BUILD_COUNT: $[counter('', 0)]  # needed for onebranch.pipeline.version task https://aka.ms/obpipelines/versioning
-
-  ### Specify container image and other global variables in this section! ###
-  # https://aka.ms/obpipelines/variables
+  BuildConfiguration: Release
+  DOTNET_NOLOGO: true
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  POWERSHELL_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  WindowsContainerImage: onebranch.azurecr.io/windows/ltsc2022/vse2022:latest
 
 resources:
   repositories:
@@ -32,41 +33,124 @@ resources:
     ref: refs/heads/main
 
 extends:
-  template: v2/OneBranch.Official.CrossPlat.yml@templates  # https://aka.ms/obpipelines/templates
+  # https://aka.ms/obpipelines/templates
+  template: v2/OneBranch.Official.CrossPlat.yml@templates
   parameters:
-    cloudvault:  # https://aka.ms/obpipelines/cloudvault
-      enabled: false
-      ### Linux Pipelines can uncomment the following to run CloudVault update as a seperate stage. ###
-      # runmode: stage
-      # dependsOn: linux_build
-      # artifacts:
-      #  - drop_linux_stage_linux_job
-    globalSdl:  # https://aka.ms/obpipelines/sdl
-      tsa:
-        enabled: true  # onebranch publish all SDL results to TSA. If TSA is disabled all SDL tools will forced into 'break' build mode.
-      # credscan:
-        # suppressionsFile: $(Build.SourcesDirectory)\.config\CredScanSuppressions.json
-      binskim:
-        break: true  # always break the build on binskim issues in addition to TSA upload
-      policheck:
-        break: true  # always break the build on policheck issues. You can disable it by setting to 'false'
-      # suppression:
-      #   suppressionFile: $(Build.SourcesDirectory)\.gdn\global.gdnsuppress
-
+    featureFlags:
+      WindowsHostVersion: '1ESWindows2022'
+    globalSdl: # https://aka.ms/obpipelines/sdl
+      asyncSdl:
+        enabled: true
+        forStages: [build]
+      #credscan:
+      #  enabled: true
+      #  scanfolder: $(Build.SourcesDirectory)
+      #  suppressionsFile: $(Build.SourcesDirectory)\.config\suppress.json
     stages:
-    # The file contains an example HelloWorld script. For more info and examples, see the links below
-    # https://aka.ms/obpipelines/containerbuildexamples
-    # https://aka.ms/obpipelines/containerprojectypes
-    - stage: stage1
-      displayName: Stage 1
+    - stage: build
       jobs:
-      - job: sampleJob
+      - job: main
+        displayName: Build package
         pool:
-          type: linux
+          type: windows
         variables:
-          ob_outputDirectory: '$(REPOROOT)\out'  # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
+        - name: ob_outputDirectory
+          value: $(Build.SourcesDirectory)/out
+        #- name: ob_sdl_credscan_suppressionsFile
+        #  value: $(Build.SourcesDirectory)\.config\suppress.json
         steps:
-        - script: echo Hello, world!
-          displayName: 'Run a one-line script'
-
-## For info and instructions on CloudTest, see https://aka.ms/obpipelines/cloudtest
+          - pwsh: |
+              Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)
+              Get-ChildItem $(Build.SourcesDirectory) -Recurse -File -Name | Write-Verbose -Verbose
+              $manifestData = Import-PowerShellDataFile -Path src/Microsoft.PowerShell.ThreadJob.psd1
+              $moduleVersion = $manifestData.ModuleVersion
+              Write-Output "##vso[task.setvariable variable=version;isOutput=true]$moduleVersion"
+              if ($manifestData.PrivateData.PsData.Prerelease) {
+                $prerel = $manifestData.PrivateData.PSData.Prerelease
+                $nupkgVersion = "${moduleVersion}-${prerel}"
+              } else {
+                $nupkgVersion = $moduleVersion
+              }
+              Write-Output "##vso[task.setvariable variable=nupkgversion;isOutput=true]$nupkgVersion"
+            name: package
+            displayName: Get version from project properties
+          - task: onebranch.pipeline.version@1
+            displayName: Set OneBranch version
+            inputs:
+              system: Custom
+              customVersion: $(package.version)
+          - task: UseDotNet@2
+            displayName: Use .NET SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+          - pwsh: |
+              Get-ChildItem | Write-Verbose -Verbose
+              ./build.ps1 -Configuration Release
+            displayName: Build
+          - task: onebranch.pipeline.signing@1
+            displayName: Sign 1st-party files
+            inputs:
+              command: sign
+              signing_profile: external_distribution
+              search_root: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
+              files_to_sign: |
+                *.psd1;
+                *.ps1xml;
+                Microsoft.PowerShell.*.dll;
+          - task: ArchiveFiles@2
+            displayName: Zip module
+            inputs:
+              rootFolderOrFile: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
+              includeRootFolder: false
+              archiveType: zip
+              archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
+          - pwsh: |
+              ./build -package -nobuild
+              Write-Verbose -Verbose ((Get-Item .).FullName)
+              Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)
+              Get-ChildItem $(Build.SourcesDirectory) -Recurse -File -Name | Write-Verbose -Verbose
+            displayName: Package module
+          - task: onebranch.pipeline.signing@1
+            displayName: Sign NuGet package
+            inputs:
+              command: sign
+              signing_profile: external_distribution
+              search_root: $(Build.SourcesDirectory)
+              files_to_sign: "**/*.nupkg"
+    - stage: release
+      dependsOn: build
+      condition: ${{ parameters.publishToPowerShellGallery }}
+      variables:
+        version: $[ stageDependencies.build.main.outputs['package.version'] ]
+        drop: $(Pipeline.Workspace)/drop_build_main
+      jobs:
+      - job: validation
+        displayName: Manual validation
+        pool:
+          type: agentless
+        timeoutInMinutes: 1440
+        steps:
+        - task: ManualValidation@0
+          displayName: Wait 24 hours for validation
+          inputs:
+            notifyUsers: $(Build.RequestedForEmail)
+            instructions: Please validate the release and then publish it!
+            timeoutInMinutes: 1440
+      - job: publish
+        dependsOn: validation
+        displayName: Publish to PowerShell Gallery
+        pool:
+          type: windows
+        variables:
+          ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
+        steps:
+        - download: current
+          displayName: Download artifacts
+        - task: NuGetCommand@2
+          displayName: Publish ConsoleGuiTools to PowerShell Gallery
+          inputs:
+            command: push
+            packagesToPush: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg
+            nuGetFeedType: external
+            publishFeedCredentials: PowerShellGallery

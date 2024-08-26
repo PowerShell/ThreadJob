@@ -19,3 +19,4 @@ xhtml/
 **/.vscode/**
 **/out/**
 **/bin/**
+.vs/**/*

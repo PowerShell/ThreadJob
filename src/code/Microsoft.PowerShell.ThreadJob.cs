@@ -1087,7 +1087,7 @@ namespace Microsoft.PowerShell.ThreadJob
 
         private void SetJobState(JobState jobState, Exception reason, bool disposeRunspace = false)
         {
-            base.SetJobState(jobState, reason);
+            base.SetJobState(jobState);
             if (disposeRunspace)
             {
                 _rs.Dispose();

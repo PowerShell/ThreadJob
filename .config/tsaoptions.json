@@ -1,0 +1,8 @@
+{
+  "instanceUrl": "https://msazure.visualstudio.com",
+  "projectName": "One",
+  "areaPath": "One\\MGMT\\Compute\\Powershell\\Powershell\\PowerShell Core\\ThreadJob",
+  "codebaseName": "TFSMSAzure_ThreadJob",
+  "notificationAliases": [ "chungjustin@microsoft.com", "slee@microsoft.com" ],
+  "tools": [ "CredScan", "PoliCheck", "BinSkim" ]
+}

@@ -37,7 +37,9 @@ extends:
   template: v2/OneBranch.Official.CrossPlat.yml@templates
   parameters:
     featureFlags:
-      WindowsHostVersion: '1ESWindows2022'
+      WindowsHostVersion:
+        Version: 2022
+        Network: Netlock
     globalSdl: # https://aka.ms/obpipelines/sdl
       asyncSdl:
         enabled: true
@@ -106,7 +108,7 @@ extends:
               archiveType: zip
               archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
           - pwsh: |
-              .\build.ps1 -clean -Build -BuildConfiguration Release -BuildFramework net8.0
+              .\build.ps1 -Publish
               Write-Verbose -Verbose ((Get-Item .).FullName)
               Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)
               Get-ChildItem $(Build.SourcesDirectory) -Recurse -File -Name | Write-Verbose -Verbose

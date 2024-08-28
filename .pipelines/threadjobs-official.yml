@@ -95,9 +95,9 @@ extends:
               signing_profile: external_distribution
               search_root: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
               files_to_sign: |
-                *.psd1;
-                *.ps1xml;
-                Microsoft.PowerShell.*.dll;
+                **/*.psd1;
+                **/*.ps1xml;
+                **/Microsoft.PowerShell.*.dll;
           - task: ArchiveFiles@2
             displayName: Zip module
             inputs:

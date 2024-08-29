@@ -2,6 +2,7 @@
 # Licensed under the MIT License.
 
 $ConfigurationFileName = 'package.config.json'
+Import-Module -Name Microsoft.PowerShell.PSResourceGet -Force
 
 function Get-BuildConfiguration {
     [CmdletBinding()]

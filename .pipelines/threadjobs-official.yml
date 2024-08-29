@@ -108,7 +108,9 @@ extends:
               archiveType: zip
               archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
           - pwsh: |
-              Install-Module -Name Microsoft.PowerShell.PSResourceGet -Force -Verbose
+              dotnet restore --source "PowerShellCore_PublicPackages" -Verbose
+              Install-Package -Name Microsoft.PowerShell.PSResourceGet -Source "PowerShellCore_PublicPackages" -Force -Verbose
+              Import-Module -Name Microsoft.PowerShell.PSResourceGet -Force
               .\build.ps1 -Publish
               Write-Verbose -Verbose ((Get-Item .).FullName)
               Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)

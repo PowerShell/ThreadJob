@@ -3,6 +3,7 @@
 
 $ConfigurationFileName = 'package.config.json'
 Import-Module -Name PowerShellGet -MinimumVersion 2.2.5
+   
 
 function Get-BuildConfiguration {
     [CmdletBinding()]

@@ -108,8 +108,7 @@ extends:
               archiveType: zip
               archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
           - pwsh: |
-              Register-PSResourceRepository -Name CFS -Uri "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v3/index.json" -Trusted -Verbose
-              Install-PSResource -Repository CFS -Name PowerShellGet -Version 2.2.5 -Verbose
+              Install-Module -Name Microsoft.PowerShell.PSResourceGet -Force -Verbose
               .\build.ps1 -Publish
               Write-Verbose -Verbose ((Get-Item .).FullName)
               Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)

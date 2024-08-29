@@ -108,9 +108,8 @@ extends:
               archiveType: zip
               archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
           - pwsh: |
-              dotnet restore --source "PowerShellCore_PublicPackages" -Verbose
-              Install-Package -Name Microsoft.PowerShell.PSResourceGet -Source "PowerShellCore_PublicPackages" -Force -Verbose
-              Import-Module -Name Microsoft.PowerShell.PSResourceGet -Force
+              Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy 
+              TrustedInstall-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -AllowPrerelease
               .\build.ps1 -Publish
               Write-Verbose -Verbose ((Get-Item .).FullName)
               Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)

@@ -43,8 +43,19 @@ function DoBuild
 
             # Check for dotnet for Windows (we only build on Windows platforms).
             if ($null -eq $dotnetCommand) {
-                Write-Verbose -Verbose -Message "dotnet.exe cannot be found in current path. Looking in ProgramFiles path."
-                $dotnetCommandPath = Join-Path -Path $env:ProgramFiles -ChildPath "dotnet\dotnet.exe"
+                if ($IsWindows) {
+                    Write-Verbose -Verbose -Message "dotnet.exe cannot be found in current path. Looking in ProgramFiles path."
+                    $dotnetCommandPath = Join-Path -Path $env:ProgramFiles -ChildPath "dotnet\dotnet.exe"
+                } elseif ($IsLinux) {
+                    Write-Verbose -Verbose -Message "dotnet cannot be found in current path. Looking in /usr/share/dotnet path."
+                    $dotnetCommandPath = "/usr/share/dotnet/dotnet"
+                } elseif ($IsMaxOS) {
+                    Write-Verbose -Verbose -Message "dotnet cannot be found in current path. Looking in /usr/local/share/dotnet path."
+                    $dotnetCommandPath = "/usr/local/share/dotnet/dotnet"
+                } else {
+                    throw "Unsupported operating system."
+                }
+
                 $dotnetCommand = Get-Command -Name $dotnetCommandPath -ErrorAction Ignore
                 if ($null -eq $dotnetCommand) {
                     throw "Dotnet.exe cannot be found: $dotnetCommandPath is unavailable for build."

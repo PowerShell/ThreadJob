@@ -9,7 +9,10 @@
     <FileVersion>2.1.1</FileVersion>
     <InformationalVersion>2.1.1</InformationalVersion>
     <TargetFramework>net8.0</TargetFramework>
-	<DefineConstants>UNIX;WINDOWS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+  	<DefineConstants>WINDOWS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">

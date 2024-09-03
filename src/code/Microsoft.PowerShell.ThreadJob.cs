@@ -11,10 +11,12 @@ using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
-using System.Management.Automation.Security;
 using System.Text;
 using System.Threading;
 using System.Reflection;
+#if WINDOWS
+using System.Management.Automation.Security;
+#endif
 
 namespace Microsoft.PowerShell.ThreadJob
 {

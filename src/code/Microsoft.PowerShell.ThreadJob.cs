@@ -14,6 +14,7 @@ using System.Management.Automation.Runspaces;
 using System.Management.Automation.Security;
 using System.Text;
 using System.Threading;
+using System.Reflection;
 
 namespace Microsoft.PowerShell.ThreadJob
 {
@@ -593,6 +594,7 @@ namespace Microsoft.PowerShell.ThreadJob
 
             // Determine session language mode for Windows platforms
             WarningRecord lockdownWarning = null;
+#if WINDOWS
             if (Environment.OSVersion.Platform.ToString().Equals("Win32NT", StringComparison.OrdinalIgnoreCase))
             {
                 bool enforceLockdown = (SystemPolicy.GetSystemLockdownPolicy() == SystemEnforcementMode.Enforce);
@@ -616,6 +618,44 @@ namespace Microsoft.PowerShell.ThreadJob
 
                 iss.LanguageMode = enforceLockdown ? PSLanguageMode.ConstrainedLanguage : PSLanguageMode.FullLanguage;
             }
+#endif
+
+#if UNIX
+            Assembly assembly = Assembly.LoadFrom("../UNIXBuildResource/System.Management.Automation.dll");
+            Type systemPolicyType = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
+            object systemPolicyInstance = Activator.CreateInstance(systemPolicyType);
+            MethodInfo getSystemLockdownPolicyMethod = systemPolicyType.GetMethod("GetSystemLockdownPolicy");
+            object result = getSystemLockdownPolicyMethod.Invoke(systemPolicyInstance, null);
+            Type systemEnforcementModeType = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
+            FieldInfo enforceField = systemEnforcementModeType.GetField("Enforce");
+            object enforceValue = enforceField.GetValue(null);
+
+            if (Environment.OSVersion.Platform.ToString().Equals("Win32NT", StringComparison.OrdinalIgnoreCase))
+            {
+                bool enforceLockdown = result.Equals(enforceValue);
+                if (enforceLockdown && !string.IsNullOrEmpty(_filePath))
+                {
+                    result = getSystemLockdownPolicyMethod.Invoke(systemPolicyInstance, new object[] { _filePath, null });
+                    
+                    // If script source is a file, check to see if it is trusted by the lock down policy
+                    enforceLockdown = result.Equals(enforceValue);
+
+                    if (!enforceLockdown && (_initSb != null))
+                    {
+                        // Even if the script file is trusted, an initialization script cannot be trusted, so we have to enforce
+                        // lock down.  Otherwise untrusted script could be run in FullLanguage mode along with the trusted file script.
+                        enforceLockdown = true;
+                        lockdownWarning = new WarningRecord(
+                            string.Format(
+                                CultureInfo.InvariantCulture,
+                                "Cannot run trusted script file {0} in FullLanguage mode because an initialization script block is included in the job, and the script block is not trusted.",
+                                _filePath));
+                    }
+                }
+
+                iss.LanguageMode = enforceLockdown ? PSLanguageMode.ConstrainedLanguage : PSLanguageMode.FullLanguage;
+            }
+#endif
 
             if (_streamingHost != null)
             {
@@ -705,7 +745,7 @@ namespace Microsoft.PowerShell.ThreadJob
             System.Diagnostics.Debug.Assert(newJob == this, "JobManager must return this job");
         }
 
-        #endregion
+#endregion
 
         #region Public methods
 

@@ -14,9 +14,8 @@ using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading;
 using System.Reflection;
-#if WINDOWS
-using System.Management.Automation.Security;
-#endif
+using System.Diagnostics;
+using SMA = System.Management.Automation;
 
 namespace Microsoft.PowerShell.ThreadJob
 {
@@ -286,11 +285,11 @@ namespace Microsoft.PowerShell.ThreadJob
         #endregion
     }
 
-    internal sealed class ThreadJobDebugger : Debugger
+    internal sealed class ThreadJobDebugger : SMA.Debugger
     {
         #region Members
 
-        private Debugger _wrappedDebugger;
+        private SMA.Debugger _wrappedDebugger;
         private string _jobName;
 
         #endregion
@@ -300,7 +299,7 @@ namespace Microsoft.PowerShell.ThreadJob
         private ThreadJobDebugger() { }
 
         public ThreadJobDebugger(
-            Debugger debugger,
+            SMA.Debugger debugger,
             string jobName)
         {
             if (debugger == null)
@@ -383,7 +382,7 @@ namespace Microsoft.PowerShell.ThreadJob
         /// <param name="host">PowerShell host.</param>
         /// <param name="path">Current path.</param>
         public override void SetParent(
-            Debugger parent,
+            SMA.Debugger parent,
             IEnumerable<Breakpoint> breakPoints,
             DebuggerResumeAction? startAction,
             PSHost host,
@@ -476,7 +475,7 @@ namespace Microsoft.PowerShell.ThreadJob
         private PSDataCollection<PSObject> _output;
         private bool _runningInitScript;
         private PSHost _streamingHost;
-        private Debugger _jobDebugger;
+        private SMA.Debugger _jobDebugger;
         private string _currentLocationPath;
 
         private const string VERBATIM_ARGUMENT = "--%";
@@ -596,14 +595,49 @@ namespace Microsoft.PowerShell.ThreadJob
 
             // Determine session language mode for Windows platforms
             WarningRecord lockdownWarning = null;
-#if WINDOWS
             if (Environment.OSVersion.Platform.ToString().Equals("Win32NT", StringComparison.OrdinalIgnoreCase))
             {
-                bool enforceLockdown = (SystemPolicy.GetSystemLockdownPolicy() == SystemEnforcementMode.Enforce);
+                Assembly assembly = null;
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = "pwsh",
+                    RedirectStandardOutput = true,
+                    RedirectStandardInput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (Process process = Process.Start(startInfo))
+                {
+                    using (System.IO.StreamWriter writer = process.StandardInput)
+                    {
+                        writer.WriteLine("$PSHome");
+                    }
+
+                    using (System.IO.StreamReader reader = process.StandardOutput)
+                    {
+                        string result = reader.ReadToEnd();
+                        string PSHomePath = ExtractNextLineAfterPSHome(result);
+                        string SMAdllPath = System.IO.Path.Combine(PSHomePath, "System.Management.Automation.dll");
+                        Console.WriteLine(SMAdllPath);
+                        assembly = Assembly.LoadFrom(SMAdllPath);
+                    }
+                }
+
+                Type systemPolicy = assembly.GetType("System.Management.Automation.SystemPolicy");
+                MethodInfo getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
+                object lockdownPolicy = getSystemLockdownPolicy.Invoke(null, null);
+
+                Type systemEnforcementMode = assembly.GetType("System.Management.Automation.SystemEnforcementMode");
+                FieldInfo enforce = systemEnforcementMode.GetField("Enforce");
+                object enforceValue = enforce.GetValue(null);
+
+                bool enforceLockdown = lockdownPolicy.Equals(enforceValue);
                 if (enforceLockdown && !string.IsNullOrEmpty(_filePath))
                 {
                     // If script source is a file, check to see if it is trusted by the lock down policy
-                    enforceLockdown = (SystemPolicy.GetLockdownPolicy(_filePath, null) == SystemEnforcementMode.Enforce);
+                    lockdownPolicy = getSystemLockdownPolicy.Invoke(null, new object[] { _filePath, null });
+                    enforceLockdown = lockdownPolicy.Equals(enforceValue);
 
                     if (!enforceLockdown && (_initSb != null))
                     {
@@ -620,7 +654,6 @@ namespace Microsoft.PowerShell.ThreadJob
 
                 iss.LanguageMode = enforceLockdown ? PSLanguageMode.ConstrainedLanguage : PSLanguageMode.FullLanguage;
             }
-#endif
 
             if (_streamingHost != null)
             {
@@ -644,11 +677,11 @@ namespace Microsoft.PowerShell.ThreadJob
                         break;
 
                     case PSInvocationState.Stopped:
-                        SetJobState(JobState.Stopped, newStateInfo.Reason, disposeRunspace:true);
+                        SetJobState(JobState.Stopped, newStateInfo.Reason, disposeRunspace: true);
                         break;
 
                     case PSInvocationState.Failed:
-                        SetJobState(JobState.Failed, newStateInfo.Reason, disposeRunspace:true);
+                        SetJobState(JobState.Failed, newStateInfo.Reason, disposeRunspace: true);
                         break;
 
                     case PSInvocationState.Completed:
@@ -660,7 +693,7 @@ namespace Microsoft.PowerShell.ThreadJob
                         }
                         else
                         {
-                            SetJobState(JobState.Completed, newStateInfo.Reason, disposeRunspace:true);
+                            SetJobState(JobState.Completed, newStateInfo.Reason, disposeRunspace: true);
                         }
                         break;
                 }
@@ -710,7 +743,7 @@ namespace Microsoft.PowerShell.ThreadJob
             System.Diagnostics.Debug.Assert(newJob == this, "JobManager must return this job");
         }
 
-#endregion
+        #endregion
 
         #region Public methods
 
@@ -1006,7 +1039,7 @@ namespace Microsoft.PowerShell.ThreadJob
         /// <summary>
         /// Job Debugger
         /// </summary>
-        public Debugger Debugger
+        public SMA.Debugger Debugger
         {
             get
             {
@@ -1151,6 +1184,25 @@ namespace Microsoft.PowerShell.ThreadJob
             }
 
             return Convert.ToBase64String(Encoding.Unicode.GetBytes(usingAstText.ToCharArray()));
+        }
+
+        private static string ExtractNextLineAfterPSHome(string output)
+        {
+            string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Find the line containing $PSHome and capture the next line
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("$PSHome"))
+                {
+                    if (i + 1 < lines.Length)
+                    {
+                        return lines[i + 1].Trim();
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         #endregion

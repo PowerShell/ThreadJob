@@ -22,8 +22,8 @@ param (
     [ValidateSet("Debug", "Release")]
     [string] $BuildConfiguration = "Debug",
 
-    [ValidateSet("net8.0")]
-    [string] $BuildFramework = "net8.0"
+    [ValidateSet("netstandard2.0")]
+    [string] $BuildFramework = "netstandard2.0"
 )
 
 Import-Module -Name "$PSScriptRoot/buildtools.psd1" -Force

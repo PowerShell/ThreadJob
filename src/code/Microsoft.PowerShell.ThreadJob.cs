@@ -12,6 +12,7 @@ using System.Management.Automation.Host;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
 using System.Text;
+using System.IO;
 using System.Threading;
 using System.Reflection;
 using System.Diagnostics;
@@ -598,37 +599,13 @@ namespace Microsoft.PowerShell.ThreadJob
             if (Environment.OSVersion.Platform.ToString().Equals("Win32NT", StringComparison.OrdinalIgnoreCase))
             {
                 Assembly assembly = null;
-                ProcessStartInfo startInfo = new ProcessStartInfo
-                {
-                    FileName = "pwsh",
-                    RedirectStandardOutput = true,
-                    RedirectStandardInput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+                assembly = LoadSystemManagementAutomationAssembly();
 
-                using (Process process = Process.Start(startInfo))
-                {
-                    using (System.IO.StreamWriter writer = process.StandardInput)
-                    {
-                        writer.WriteLine("$PSHome");
-                    }
-
-                    using (System.IO.StreamReader reader = process.StandardOutput)
-                    {
-                        string result = reader.ReadToEnd();
-                        string PSHomePath = ExtractNextLineAfterPSHome(result);
-                        string SMAdllPath = System.IO.Path.Combine(PSHomePath, "System.Management.Automation.dll");
-                        Console.WriteLine(SMAdllPath);
-                        assembly = Assembly.LoadFrom(SMAdllPath);
-                    }
-                }
-
-                Type systemPolicy = assembly.GetType("System.Management.Automation.SystemPolicy");
+                Type systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
                 MethodInfo getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
                 object lockdownPolicy = getSystemLockdownPolicy.Invoke(null, null);
 
-                Type systemEnforcementMode = assembly.GetType("System.Management.Automation.SystemEnforcementMode");
+                Type systemEnforcementMode = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
                 FieldInfo enforce = systemEnforcementMode.GetField("Enforce");
                 object enforceValue = enforce.GetValue(null);
 
@@ -1184,6 +1161,39 @@ namespace Microsoft.PowerShell.ThreadJob
             }
 
             return Convert.ToBase64String(Encoding.Unicode.GetBytes(usingAstText.ToCharArray()));
+        }
+
+        private static Assembly LoadSystemManagementAutomationAssembly()
+        {
+            Assembly assembly;
+            
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = "pwsh",
+                RedirectStandardOutput = true,
+                RedirectStandardInput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using (Process process = Process.Start(startInfo))
+            {
+                using (System.IO.StreamWriter writer = process.StandardInput)
+                {
+                    writer.WriteLine("$PSHome");
+                    writer.WriteLine("Exit");
+                }
+
+                using (System.IO.StreamReader reader = process.StandardOutput)
+                {
+                    string result = reader.ReadToEnd();
+                    string PSHomePath = ExtractNextLineAfterPSHome(result);
+                    string SMAdllPath = System.IO.Path.Combine(PSHomePath, "System.Management.Automation.dll");
+                    assembly = Assembly.LoadFrom(SMAdllPath);
+                }
+            }
+
+            return assembly;
         }
 
         private static string ExtractNextLineAfterPSHome(string output)

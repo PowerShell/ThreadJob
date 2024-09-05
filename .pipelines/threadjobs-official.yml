@@ -90,7 +90,7 @@ extends:
               Get-ChildItem | Write-Verbose -Verbose
               Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5
-              .\build.ps1 -clean -Build -BuildConfiguration Release -BuildFramework net8.0
+              .\build.ps1 -clean -Build -BuildConfiguration Release -BuildFramework netstandard2.0
             displayName: Build
           - task: onebranch.pipeline.signing@1
             displayName: Sign 1st-party files

@@ -51,10 +51,6 @@ extends:
       #  scanfolder: $(Build.SourcesDirectory)
       #  suppressionsFile: $(Build.SourcesDirectory)\.config\suppress.json
     stages:
-    - stage: 'PPE_SouthCentralUs_Ring0'  
-      displayName: 'PPE:SouthCentralUs Ring0'
-      variables:
-          ob_release_environment: PPE 
     - stage: build
       jobs:
       - job: main
@@ -128,12 +124,14 @@ extends:
               signing_profile: external_distribution
               search_root: $(Build.SourcesDirectory)
               files_to_sign: "**/*.nupkg"
-    - stage: release
+    - stage: 'PPE_SouthCentralUs_Ring0'  
+      displayName: 'PPE:SouthCentralUs Ring0'
+      variables:
+          ob_release_environment: PPE
+          version: $[ stageDependencies.build.main.outputs['package.version'] ]
+          drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: build
       condition: ${{ parameters.publishToPowerShellGallery }}
-      variables:
-        version: $[ stageDependencies.build.main.outputs['package.version'] ]
-        drop: $(Pipeline.Workspace)/drop_build_main
       jobs:
       - job: validation
         displayName: Manual validation

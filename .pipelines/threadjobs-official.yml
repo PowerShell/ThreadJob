@@ -51,6 +51,10 @@ extends:
       #  scanfolder: $(Build.SourcesDirectory)
       #  suppressionsFile: $(Build.SourcesDirectory)\.config\suppress.json
     stages:
+    - stage: 'PPE_SouthCentralUs_Ring0'  
+      displayName: 'PPE:SouthCentralUs Ring0'
+      variables:
+          ob_release_environment: PPE 
     - stage: build
       jobs:
       - job: main
@@ -152,7 +156,8 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
         steps:
-        - download: current
+        - download:  CompliantSave-Official # This will typically be download: current in case of Multi-Stage Composite YAML
+        - task: PublishExtension@5
           displayName: Download artifacts
         - task: NuGetCommand@2
           displayName: Publish ConsoleGuiTools to PowerShell Gallery

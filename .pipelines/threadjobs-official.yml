@@ -36,6 +36,8 @@ extends:
   # https://aka.ms/obpipelines/templates
   template: v2/OneBranch.Official.CrossPlat.yml@templates
   parameters:
+    release:
+      category: NonAzure
     featureFlags:
       WindowsHostVersion:
         Version: 2022
@@ -145,7 +147,8 @@ extends:
         dependsOn: validation
         displayName: Publish to PowerShell Gallery
         pool:
-          type: windows
+          type: release
+          os: windows
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
         steps:

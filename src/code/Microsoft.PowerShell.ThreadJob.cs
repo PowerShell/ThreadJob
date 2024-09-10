@@ -12,7 +12,6 @@ using System.Management.Automation.Host;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
 using System.Text;
-using System.IO;
 using System.Threading;
 using System.Reflection;
 using System.Diagnostics;

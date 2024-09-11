@@ -158,9 +158,7 @@ extends:
         steps:
         - download:  CompliantSave-Official # This will typically be download: current in case of Multi-Stage Composite YAML
         - task: PublishExtension@5
-          displayName: Download artifacts
-        - task: NuGetCommand@2
-          displayName: Publish ConsoleGuiTools to PowerShell Gallery
+          displayName: Publish ThreadJobs to PowerShell Gallery
           inputs:
             command: push
             packagesToPush: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg

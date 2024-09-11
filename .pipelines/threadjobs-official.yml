@@ -124,14 +124,7 @@ extends:
               signing_profile: external_distribution
               search_root: $(Build.SourcesDirectory)
               files_to_sign: "**/*.nupkg"
-    - stage: 'PPE_SouthCentralUs_Ring0'  
-      displayName: 'PPE:SouthCentralUs Ring0'
-      variables:
-          ob_release_environment: PPE
-          version: $[ stageDependencies.build.main.outputs['package.version'] ]
-          drop: $(Pipeline.Workspace)/drop_build_main
-      dependsOn: build
-      condition: ${{ parameters.publishToPowerShellGallery }}
+    - stage: manual
       jobs:
       - job: validation
         displayName: Manual validation
@@ -145,6 +138,15 @@ extends:
             notifyUsers: $(Build.RequestedForEmail)
             instructions: Please validate the release and then publish it!
             timeoutInMinutes: 1440
+    - stage: 'PPE_SouthCentralUs_Ring0'  
+      displayName: 'PPE:SouthCentralUs Ring0'
+      variables:
+          ob_release_environment: PPE
+          version: $[ stageDependencies.build.main.outputs['package.version'] ]
+          drop: $(Pipeline.Workspace)/drop_build_main
+      dependsOn: build
+      condition: ${{ parameters.publishToPowerShellGallery }}
+      jobs:
       - job: publish
         dependsOn: validation
         displayName: Publish to PowerShell Gallery

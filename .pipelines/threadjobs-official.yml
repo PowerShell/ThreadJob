@@ -138,8 +138,8 @@ extends:
             notifyUsers: $(Build.RequestedForEmail)
             instructions: Please validate the release and then publish it!
             timeoutInMinutes: 1440
-    - stage: 'PPE_SouthCentralUs_Ring0'  
-      displayName: 'PPE:SouthCentralUs Ring0'
+    - stage: release
+      displayName: release
       variables:
           ob_release_environment: PPE
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
@@ -156,7 +156,6 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
         steps:
-        - download:  CompliantSave-Official # This will typically be download: current in case of Multi-Stage Composite YAML
         - task: PublishExtension@5
           displayName: Publish ThreadJobs to PowerShell Gallery
           inputs:

@@ -597,9 +597,7 @@ namespace Microsoft.PowerShell.ThreadJob
             WarningRecord lockdownWarning = null;
             if (Environment.OSVersion.Platform.ToString().Equals("Win32NT", StringComparison.OrdinalIgnoreCase))
             {
-                Assembly assembly = null;
-                assembly = LoadSystemManagementAutomationAssembly();
-
+                Assembly assembly = Assembly.LoadFrom(typeof(PSObject).Assembly.Location);
                 Type systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
                 MethodInfo getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
                 object lockdownPolicy = getSystemLockdownPolicy.Invoke(null, null);
@@ -1160,58 +1158,6 @@ namespace Microsoft.PowerShell.ThreadJob
             }
 
             return Convert.ToBase64String(Encoding.Unicode.GetBytes(usingAstText.ToCharArray()));
-        }
-
-        private static Assembly LoadSystemManagementAutomationAssembly()
-        {
-            Assembly assembly;
-            
-            ProcessStartInfo startInfo = new ProcessStartInfo
-            {
-                FileName = "pwsh",
-                RedirectStandardOutput = true,
-                RedirectStandardInput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using (Process process = Process.Start(startInfo))
-            {
-                using (System.IO.StreamWriter writer = process.StandardInput)
-                {
-                    writer.WriteLine("$PSHome");
-                    writer.WriteLine("Exit");
-                }
-
-                using (System.IO.StreamReader reader = process.StandardOutput)
-                {
-                    string result = reader.ReadToEnd();
-                    string PSHomePath = ExtractNextLineAfterPSHome(result);
-                    string SMAdllPath = System.IO.Path.Combine(PSHomePath, "System.Management.Automation.dll");
-                    assembly = Assembly.LoadFrom(SMAdllPath);
-                }
-            }
-
-            return assembly;
-        }
-
-        private static string ExtractNextLineAfterPSHome(string output)
-        {
-            string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-
-            // Find the line containing $PSHome and capture the next line
-            for (int i = 0; i < lines.Length; i++)
-            {
-                if (lines[i].Contains("$PSHome"))
-                {
-                    if (i + 1 < lines.Length)
-                    {
-                        return lines[i + 1].Trim();
-                    }
-                }
-            }
-
-            return string.Empty;
         }
 
         #endregion

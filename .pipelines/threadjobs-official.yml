@@ -139,7 +139,7 @@ extends:
             notifyUsers: $(Build.RequestedForEmail)
             instructions: Please validate the release and then publish it!
             timeoutInMinutes: 1440
-    - stage: release official Microsoft_PowerShell_ThreadJob module
+    - stage: release_official_MicrosoftPowerShellThreadJob_module
       displayName: release official
       variables:
           ob_release_environment: PPE

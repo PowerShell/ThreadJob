@@ -167,7 +167,7 @@ extends:
             packagesToPush: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg
             nuGetFeedType: external
             publishFeedCredentials: PowerShellGallery-chungjustin
-    - stage: release proxy ThreadJob module
+    - stage: release_proxy_ThreadJob_module
       displayName: release proxy
       variables:
           ob_release_environment: PPE

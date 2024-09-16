@@ -15,7 +15,7 @@ parameters:
     displayName: 'Publish official module to PowerShell gallery'
     type: boolean
     default: false
-  -name : 'publishProxyToPowerShellGallery'
+  - name : 'publishProxyToPowerShellGallery'
     displayName: 'Publish proxy module to PowerShell gallery'
     type: boolean
     default: false

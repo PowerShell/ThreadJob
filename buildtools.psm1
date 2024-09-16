@@ -36,6 +36,7 @@ function Get-BuildConfiguration {
     $configObj.TestPath = Join-Path $projectRoot -ChildPath $configObj.TestPath
     $configObj.HelpPath = Join-Path $projectRoot -ChildPath $configObj.HelpPath
     $configObj.BuildOutputPath = Join-Path $projectRoot -ChildPath $configObj.BuildOutputPath
+
     if ($configObj.SignedOutputPath) {
         $configObj.SignedOutputPath = Join-Path $projectRoot -ChildPath $configObj.SignedOutputPath
     }
@@ -79,7 +80,11 @@ function Publish-ModulePackage
     Write-Verbose -Verbose -Message "Publishing package to local repo: $localRepoName"
     $modulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ModuleName
 
+    # Proxy module
+    $proxyModulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ProxyModuleName
+
     Publish-PSResource -Path $modulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
+    Publish-PSResource -Path $proxyModulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
 
     $artifactPath = (Get-ChildItem -Path $localRepoLocation -Filter "$($config.ModuleName)*.nupkg").FullName
     $artifactPath = Resolve-Path -Path $artifactPath

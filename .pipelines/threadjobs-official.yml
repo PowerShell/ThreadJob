@@ -139,8 +139,8 @@ extends:
             notifyUsers: $(Build.RequestedForEmail)
             instructions: Please validate the release and then publish it!
             timeoutInMinutes: 1440
-    - stage: release
-      displayName: release
+    - stage: release official Microsoft.PowerShell.ThreadJob module
+      displayName: release official
       variables:
           ob_release_environment: PPE
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
@@ -157,9 +157,33 @@ extends:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
         steps:
         - task: PublishExtension@5
-          displayName: Publish ThreadJobs to PowerShell Gallery
+          displayName: Publish Microsoft.PowerShell.ThreadJobs to PowerShell Gallery
           inputs:
             command: push
             packagesToPush: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg
+            nuGetFeedType: external
+            publishFeedCredentials: PowerShellGallery-chungjustin
+    - stage: release proxy ThreadJob module
+      displayName: release proxy
+      variables:
+          ob_release_environment: PPE
+          version: $[ stageDependencies.build.main.outputs['package.version'] ]
+          drop: $(Pipeline.Workspace)/drop_build_main
+      dependsOn: manual
+      condition: ${{ parameters.publishToPowerShellGallery }}
+      jobs:
+      - job: publish
+        displayName: Publish to PowerShell Gallery
+        pool:
+          type: release
+          os: windows
+        variables:
+          ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
+        steps:
+        - task: PublishExtension@5
+          displayName: Publish Proxy ThreadJobs to PowerShell Gallery
+          inputs:
+            command: push
+            packagesToPush: $(Build.SourcesDirectory)/out/ThreadJob.$(package.nupkgVersion).nupkg
             nuGetFeedType: external
             publishFeedCredentials: PowerShellGallery-chungjustin

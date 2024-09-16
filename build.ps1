@@ -31,8 +31,10 @@ Import-Module -Name "$PSScriptRoot/buildtools.psd1" -Force
 $config = Get-BuildConfiguration -ConfigPath $PSScriptRoot
 
 $script:ModuleName = $config.ModuleName
+$script:ProxyModuleName = $config.ProxyModuleName
 $script:SrcPath = $config.SourcePath
 $script:OutDirectory = $config.BuildOutputPath
+$script:ProxyOutDirectory = $config.BuildOutputPath
 $script:SignedDirectory = $config.SignedOutputPath
 $script:TestPath = $config.TestPath
 
@@ -73,6 +75,7 @@ if ($Clean -and (Test-Path $OutDirectory))
 if (-not (Test-Path $OutDirectory))
 {
     $script:OutModule = New-Item -ItemType Directory -Path (Join-Path $OutDirectory $ModuleName)
+    $script:ProxyOutModule = New-Item -itemType Directory -Path (Join-Path $OutDirectory $ProxyModuleName)
 }
 else
 {

@@ -13,6 +13,10 @@ function DoBuild
     $BuildOutPath = "${OutDirectory}/${ModuleName}"
     Write-Verbose -Verbose -Message "Module output file path: '$BuildOutPath'"
 
+    # Proxy module out path
+    $ProxyOutPath = "${OutDirectory}/${ProxyModuleName}"
+    Write-Verbose -Verbose -Message "Module output file path: '$ProxyOutPath'"
+
     # Module build source path
     $BuildSrcPath = "bin/${BuildConfiguration}/${BuildFramework}/publish"
     Write-Verbose -Verbose -Message "Module build source path: '$BuildSrcPath'"
@@ -20,6 +24,11 @@ function DoBuild
     # Copy psd1 file
     Write-Verbose -Verbose "Copy-Item ${SrcPath}/${ModuleName}.psd1 to $BuildOutPath"
     Copy-Item "${SrcPath}/${ModuleName}.psd1" "$BuildOutPath"
+
+    # Copy Proxy psd1 and psm1 file
+    Write-Verbose -Verbose -Message "Copying proxy module files to '$ProxyOutPath'"
+    Copy-Item "${SrcPath}/${ProxyModuleName}/${ProxyModuleName}.psd1" "$ProxyOutPath"
+    Copy-Item "${SrcPath}/${ProxyModuleName}/${ProxyModuleName}.psm1" "$ProxyOutPath"
 
     # Copy help
     Write-Verbose -Verbose -Message "Copying help files to '$BuildOutPath'"

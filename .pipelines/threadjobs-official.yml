@@ -11,8 +11,12 @@ schedules:
   always: true
 
 parameters:
-  - name: 'publishToPowerShellGallery'
-    displayName: 'Publish module to PowerShell gallery'
+  - name: 'publishOfficialToPowerShellGallery'
+    displayName: 'Publish official module to PowerShell gallery'
+    type: boolean
+    default: false
+  -name : 'publishProxyToPowerShellGallery'
+    displayName: 'Publish proxy module to PowerShell gallery'
     type: boolean
     default: false
 
@@ -146,7 +150,7 @@ extends:
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
           drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: manual
-      condition: ${{ parameters.publishToPowerShellGallery }}
+      condition: ${{ parameters.publishOfficialToPowerShellGallery }}
       jobs:
       - job: publish
         displayName: Publish to PowerShell Gallery
@@ -170,7 +174,7 @@ extends:
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
           drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: manual
-      condition: ${{ parameters.publishToPowerShellGallery }}
+      condition: ${{ parameters.publishProxyToPowerShellGallery }}
       jobs:
       - job: publish
         displayName: Publish to PowerShell Gallery

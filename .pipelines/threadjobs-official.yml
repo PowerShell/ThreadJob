@@ -116,8 +116,8 @@ extends:
               archiveType: zip
               archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
           - pwsh: |
-              Write-Verbose -Verbose -Message "Import Microsoft.PowerShell.ThreadJob module"
-              Import-Module $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
+              Write-Verbose -Verbose -Message "Install Microsoft.PowerShell.ThreadJob module"
+              Install-Module -Name Microsoft.PowerShell.ThreadJob -Force -AllowClobber
               Write-Verbose -Verbose -Message "Test ThreadJob module manifest"
               Test-ModuleManifest -Path $(Build.SourcesDirectory)/out/ThreadJob/ThreadJob.psd1
               .\build.ps1 -Publish

@@ -81,10 +81,13 @@ function Publish-ModulePackage
     $modulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ModuleName
 
     # Proxy module
+    Write-Verbose -Verbose -Message "Publishing proxy module to local repo: $localRepoName"
     $proxyModulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ProxyModuleName
-
-    Publish-PSResource -Path $modulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
     Publish-PSResource -Path $proxyModulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
+
+    # Official module
+    Write-Verbose -Verbose -Message "Publishing official module to local repo: $localRepoName"
+    Publish-PSResource -Path $modulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
 
     $artifactPath = (Get-ChildItem -Path $localRepoLocation -Filter "$($config.ModuleName)*.nupkg").FullName
     $artifactPath = Resolve-Path -Path $artifactPath

@@ -116,6 +116,7 @@ extends:
               archiveType: zip
               archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
           - pwsh: |
+              Import-Module $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob/Microsoft.PowerShell.ThreadJob.dll
               .\build.ps1 -Publish
               Write-Verbose -Verbose ((Get-Item .).FullName)
               Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)

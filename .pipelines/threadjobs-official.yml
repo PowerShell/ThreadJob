@@ -164,14 +164,7 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
         steps:
-        - task: UseNode@2
-          displayName: 'Use Node.js 14.x'
-          inputs:
-            version: 14.x
-        - script: |
-            npm install -g tfx-cli
-          displayName: 'Install tfx-cli'
-        - task: PublishExtension@5
+        - task: NuGetCommand@2
           displayName: Publish Microsoft.PowerShell.ThreadJobs to PowerShell Gallery
           inputs:
             command: push
@@ -195,14 +188,7 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
         steps:
-        - task: UseNode@2
-          displayName: 'Use Node.js 14.x'
-          inputs:
-            version: 14.x
-        - script: |
-            npm install -g tfx-cli
-          displayName: 'Install tfx-cli'
-        - task: PublishExtension@5
+        - task: NugetCommand@2
           displayName: Publish Proxy ThreadJobs to PowerShell Gallery
           inputs:
             command: push

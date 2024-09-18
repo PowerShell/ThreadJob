@@ -103,12 +103,11 @@ extends:
             inputs:
               command: sign
               signing_profile: external_distribution
-              search_root: $(Build.SourcesDirectory)/out
+              search_root: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
               files_to_sign: |
                 **/*.psd1;
                 **/*.ps1xml;
                 **/Microsoft.PowerShell.*.dll;
-                **/*.psm1;
           - task: ArchiveFiles@2
             displayName: Zip module
             inputs:
@@ -116,13 +115,6 @@ extends:
               includeRootFolder: false
               archiveType: zip
               archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
-          - task: ArchiveFiles@2
-            displayName: Zip module
-            inputs:
-              rootFolderOrFile: $(Build.SourcesDirectory)/out/ThreadJob
-              includeRootFolder: false
-              archiveType: zip
-              archiveFile: out/ThreadJob-v$(package.version).zip
           - pwsh: |
               Write-Verbose -Verbose -Message "Install Microsoft.PowerShell.ThreadJob module"
               Copy-Item -Path $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob -Destination ($env:PSModulePath -split ';')[0] -Recurse -Force

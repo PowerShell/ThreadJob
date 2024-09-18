@@ -203,7 +203,7 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
         steps:
-                - task: UseNode@2
+        - task: UseNode@2
           displayName: 'Use Node.js 14.x'
           inputs:
             version: 14.x

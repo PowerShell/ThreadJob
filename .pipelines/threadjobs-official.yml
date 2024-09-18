@@ -164,13 +164,12 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
         steps:
-        - task: NuGetCommand@2
-          displayName: Publish Microsoft.PowerShell.ThreadJobs to PowerShell Gallery
-          inputs:
-            command: push
-            packagesToPush: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg
-            nuGetFeedType: external
-            publishFeedCredentials: PowerShellGallery-chungjustin
+        - pwsh: |
+            Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted
+            Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5
+            Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v3" -InstallationPolicy Trusted
+            Publish-PSResource -ApiKey $(ChungJustinAPIKey) -Repository PSGallery -Path $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg
+          displayName: Publish to PowerShell Gallery
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
       variables:
@@ -188,10 +187,9 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
         steps:
-        - task: NugetCommand@2
-          displayName: Publish Proxy ThreadJobs to PowerShell Gallery
-          inputs:
-            command: push
-            packagesToPush: $(Build.SourcesDirectory)/out/ThreadJob.$(package.nupkgVersion).nupkg
-            nuGetFeedType: external
-            publishFeedCredentials: PowerShellGallery-chungjustin
+        - pwsh: |
+            Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted
+            Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5
+            Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v3" -InstallationPolicy Trusted
+            Publish-PSResource -ApiKey $(ChungJustinAPIKey) -Repository PSGallery -Path $(Build.SourcesDirectory)/out/ThreadJob.$(package.nupkgVersion).nupkg
+          displayName: Publish to PowerShell Gallery

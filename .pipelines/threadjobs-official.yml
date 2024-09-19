@@ -180,6 +180,7 @@ extends:
             version: 8.x
         - task: powershell@2
           inputs:
+            pwsh: true
             targetType: inline
             script: |
               Get-ChildItem | Write-Verbose -Verbose
@@ -216,6 +217,7 @@ extends:
             version: 8.x
         - task: powershell@2
           inputs:
+            pwsh: true
             targetType: inline
             script: |
               Write-Verbose -Verbose -Message "Set up CFS repository"

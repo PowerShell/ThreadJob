@@ -176,9 +176,13 @@ extends:
           inputs:
             targetType: inline
             script: |
+              Write-Verbose -Verbose -Message "Set up CFS repository"
               Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted
+              Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5
-              Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v3" -InstallationPolicy Trusted
+              Write-Verbose -Verbose -Message "Set up PSGallery repository"
+              Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v2" -InstallationPolicy Trusted
+              Write-Verbose -Verbose -Message "Publish module to PSGallery"
               Publish-PSResource -ApiKey $(ChungJustinAPIKey) -Repository PSGallery -Path $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg
           displayName: Publish to PowerShell Gallery
     - stage: release_proxy_ThreadJob_module
@@ -202,8 +206,12 @@ extends:
           inputs:
             targetType: inline
             script: |
+              Write-Verbose -Verbose -Message "Set up CFS repository"
               Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted
+              Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5
-              Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v3" -InstallationPolicy Trusted
+              Write-Verbose -Verbose -Message "Set up PSGallery repository"
+              Register-PSRepository -Name PSGallery -SourceLocation "https://www.powershellgallery.com/api/v2" -InstallationPolicy Trusted
+              Write-Verbose -Verbose -Message "Publish module to PSGallery"
               Publish-PSResource -ApiKey $(ChungJustinAPIKey) -Repository PSGallery -Path $(Build.SourcesDirectory)/out/ThreadJob.$(package.nupkgVersion).nupkg
           displayName: Publish to PowerShell Gallery

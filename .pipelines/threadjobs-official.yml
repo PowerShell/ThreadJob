@@ -177,7 +177,7 @@ extends:
           displayName: Use .NET SDK
           inputs:
             packageType: sdk
-            useGlobalJson: true
+            version: 8.x
         - task: powershell@2
           inputs:
             targetType: inline
@@ -213,7 +213,7 @@ extends:
           displayName: Use .NET SDK
           inputs:
             packageType: sdk
-            useGlobalJson: true
+            version: 8.x
         - task: powershell@2
           inputs:
             targetType: inline

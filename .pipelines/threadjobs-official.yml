@@ -169,15 +169,15 @@ extends:
         displayName: Publish to PowerShell Gallery
         pool:
           type: release
-          os: windows
+          os: linux
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
         steps:
-        - task: UseDotNet@2
-          displayName: Use .NET SDK
+        - task: Bash@3
           inputs:
-            packageType: sdk
-            version: 8.x
+            targetType: inline
+            script: |
+              tdnf install -y powershell
         - task: powershell@2
           inputs:
             pwsh: true
@@ -206,15 +206,15 @@ extends:
         displayName: Publish to PowerShell Gallery
         pool:
           type: release
-          os: windows
+          os: linux
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
         steps:
-        - task: UseDotNet@2
-          displayName: Use .NET SDK
+        - task: Bash@3
           inputs:
-            packageType: sdk
-            version: 8.x
+            targetType: inline
+            script: |
+              tdnf install -y powershell
         - task: powershell@2
           inputs:
             pwsh: true

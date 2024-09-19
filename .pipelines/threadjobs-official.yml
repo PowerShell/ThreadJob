@@ -173,6 +173,11 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
         steps:
+        - task: UseDotNet@2
+          displayName: Use .NET SDK
+          inputs:
+            packageType: sdk
+            useGlobalJson: true
         - task: powershell@2
           inputs:
             targetType: inline
@@ -204,6 +209,11 @@ extends:
         variables:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
         steps:
+        - task: UseDotNet@2
+          displayName: Use .NET SDK
+          inputs:
+            packageType: sdk
+            useGlobalJson: true
         - task: powershell@2
           inputs:
             targetType: inline

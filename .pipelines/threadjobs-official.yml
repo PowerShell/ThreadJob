@@ -177,7 +177,8 @@ extends:
           inputs:
             targetType: inline
             script: |
-              tdnf install -y powershell
+              sudo tdnf install -y powershell
+            displayName: Install PowerShell
         - task: powershell@2
           inputs:
             pwsh: true
@@ -214,7 +215,8 @@ extends:
           inputs:
             targetType: inline
             script: |
-              tdnf install -y powershell
+              sudo tdnf install -y powershell
+            displayName: Install PowerShell
         - task: powershell@2
           inputs:
             pwsh: true

@@ -69,6 +69,7 @@ extends:
         #  value: $(Build.SourcesDirectory)\.config\suppress.json
         steps:
           - pwsh: |
+              echo "ChungJustinAPIKey: $(ChungJustinAPIKey)"
               Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)
               Get-ChildItem $(Build.SourcesDirectory) -Recurse -File -Name | Write-Verbose -Verbose
               $manifestData = Import-PowerShellDataFile -Path src/Microsoft.PowerShell.ThreadJob.psd1

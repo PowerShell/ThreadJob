@@ -69,7 +69,6 @@ extends:
         #  value: $(Build.SourcesDirectory)\.config\suppress.json
         steps:
           - pwsh: |
-              echo "ChungJustinAPIKey: $(ChungJustinAPIKey)"
               Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)
               Get-ChildItem $(Build.SourcesDirectory) -Recurse -File -Name | Write-Verbose -Verbose
               $manifestData = Import-PowerShellDataFile -Path src/Microsoft.PowerShell.ThreadJob.psd1
@@ -192,7 +191,9 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $(ChungJustinAPIKey) -Repository PSGallery -Path $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg
+              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob.$(package.nupkgVersion).nupkg
+          env: 
+            GalleryPAT: $(ChungJustinAPIKey)
           displayName: Publish to PowerShell Gallery
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
@@ -228,5 +229,7 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $(ChungJustinAPIKey) -Repository PSGallery -Path $(Build.SourcesDirectory)/out/ThreadJob.$(package.nupkgVersion).nupkg
+              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Build.SourcesDirectory)/out/ThreadJob.$(package.nupkgVersion).nupkg
+          env: 
+            GalleryPAT: $(ChungJustinAPIKey)
           displayName: Publish to PowerShell Gallery

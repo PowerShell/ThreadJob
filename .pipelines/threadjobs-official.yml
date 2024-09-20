@@ -184,7 +184,6 @@ extends:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
         steps:
-        - download: current
         - task: Bash@3
           inputs:
             targetType: inline
@@ -227,7 +226,6 @@ extends:
           ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
         steps:
-        - download: current
         - task: Bash@3
           inputs:
             targetType: inline

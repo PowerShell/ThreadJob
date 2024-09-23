@@ -159,6 +159,7 @@ extends:
     - stage: release_official_MicrosoftPowerShellThreadJob_module
       displayName: release official
       variables:
+      - group: ThreadJob_Gallery_API
         ob_release_environment: PPE
         drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: [build, manual]
@@ -175,7 +176,6 @@ extends:
           os: linux
         variables:
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
-          group: ThreadJob_Gallery_API
         steps:
         - task: Bash@3
           inputs:
@@ -202,6 +202,7 @@ extends:
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
       variables:
+      - group: ThreadJob_Gallery_API
         ob_release_environment: PPE
         drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: [build, manual]
@@ -218,7 +219,6 @@ extends:
           os: linux
         variables:
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
-          group: ThreadJob_Gallery_API
         steps:
         - task: Bash@3
           inputs:

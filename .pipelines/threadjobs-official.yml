@@ -175,7 +175,7 @@ extends:
           os: linux
         variables:
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
-        - group: ThreadJob_Gallery_API
+          group: ThreadJob_Gallery_API
         steps:
         - task: Bash@3
           inputs:
@@ -218,7 +218,7 @@ extends:
           os: linux
         variables:
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
-        - group: ThreadJob_Gallery_API
+          group: ThreadJob_Gallery_API
         steps:
         - task: Bash@3
           inputs:

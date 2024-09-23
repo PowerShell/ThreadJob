@@ -160,8 +160,6 @@ extends:
       displayName: release official
       variables:
       - group: ThreadJob_Gallery_API
-        ob_release_environment: PPE
-        drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: [build, manual]
       condition: ${{ parameters.publishOfficialToPowerShellGallery }}
       jobs:
@@ -203,8 +201,6 @@ extends:
       displayName: release proxy
       variables:
       - group: ThreadJob_Gallery_API
-        ob_release_environment: PPE
-        drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: [build, manual]
       condition: ${{ parameters.publishProxyToPowerShellGallery }}
       jobs:

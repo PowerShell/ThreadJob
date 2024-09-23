@@ -81,7 +81,7 @@ extends:
                 $nupkgVersion = $moduleVersion
               }
               Write-Host "##vso[task.setvariable variable=nupkgversion;isOutput=true]$nupkgVersion"
-              Write-Verbose -Verbose "GalleryPat: $(ChungJustinAPIKey)"
+              Write-Verbose -Verbose "GalleryPat: ($env:GalleryPAT)"
             name: package
             env:
               GalleryPAT: $(ChungJustinAPIKey)

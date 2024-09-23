@@ -159,8 +159,8 @@ extends:
     - stage: release_official_MicrosoftPowerShellThreadJob_module
       displayName: release official
       variables:
-          ob_release_environment: PPE
-          drop: $(Pipeline.Workspace)/drop_build_main
+        ob_release_environment: PPE
+        drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: [build, manual]
       condition: ${{ parameters.publishOfficialToPowerShellGallery }}
       jobs:
@@ -204,8 +204,8 @@ extends:
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
       variables:
-          ob_release_environment: PPE
-          drop: $(Pipeline.Workspace)/drop_build_main
+        ob_release_environment: PPE
+        drop: $(Pipeline.Workspace)/drop_build_main
       dependsOn: [build, manual]
       condition: ${{ parameters.publishProxyToPowerShellGallery }}
       jobs:

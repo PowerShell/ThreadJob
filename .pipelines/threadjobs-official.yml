@@ -174,10 +174,8 @@ extends:
           type: release
           os: linux
         variables:
-        - group: ThreadJob_Gallery_API
-        - name: ChungJustinAPIKey
-          value: $(variables.ChungJustinAPIKey)
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
+        - group: ThreadJob_Gallery_API
         steps:
         - task: Bash@3
           inputs:
@@ -219,10 +217,8 @@ extends:
           type: release
           os: linux
         variables:
-        - group: ThreadJob_Gallery_API
-        - name: ChungJustinAPIKey
-          value: $(variables.ChungJustinAPIKey)
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
+        - group: ThreadJob_Gallery_API
         steps:
         - task: Bash@3
           inputs:

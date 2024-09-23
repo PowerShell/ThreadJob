@@ -175,7 +175,8 @@ extends:
           os: linux
         variables:
         - group: ThreadJob_Gallery_API
-          ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
+        - name: ChungJustinAPIKey
+          value: $(variables.ChungJustinAPIKey)
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
         steps:
         - task: Bash@3
@@ -219,7 +220,8 @@ extends:
           os: linux
         variables:
         - group: ThreadJob_Gallery_API
-          ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
+        - name: ChungJustinAPIKey
+          value: $(variables.ChungJustinAPIKey)
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
         steps:
         - task: Bash@3

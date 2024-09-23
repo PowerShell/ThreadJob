@@ -189,7 +189,8 @@ extends:
             pwsh: true
             targetType: inline
             script: |
-              Get-ChildItem | Write-Verbose -Verbose
+              Write-Verbose -Verbose ((Get-Item $(Pipeline.Workspace)/drop_build_main).FullName)
+              Get-ChildItem $(Pipeline.Workspace)/drop_build_main -Recurse -File -Name | Write-Verbose -Verbose
               Write-Verbose -Verbose -Message "Set up CFS repository"
               Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted -ErrorAction Continue
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
@@ -231,7 +232,8 @@ extends:
             pwsh: true
             targetType: inline
             script: |
-              Get-ChildItem | Write-Verbose -Verbose
+              Write-Verbose -Verbose ((Get-Item $(Pipeline.Workspace)/drop_build_main).FullName)
+              Get-ChildItem $(Pipeline.Workspace)/drop_build_main -Recurse -File -Name | Write-Verbose -Verbose
               Write-Verbose -Verbose -Message "Set up CFS repository"
               Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted -ErrorAction Continue
               Write-Verbose -Verbose -Message "Install PSResourceGet module"

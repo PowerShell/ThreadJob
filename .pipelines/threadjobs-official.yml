@@ -142,12 +142,6 @@ extends:
               signing_profile: external_distribution
               search_root: $(Build.SourcesDirectory)
               files_to_sign: "**/*.nupkg"
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Nupkg artifacts
-            inputs:
-              PathtoPublish: $(Build.SourcesDirectory)/out
-              ArtifactName: drop_build_main
-              publishLocation: Container
     - stage: manual
       dependsOn: build
       jobs:

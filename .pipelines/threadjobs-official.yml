@@ -28,7 +28,9 @@ variables:
   POWERSHELL_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   WindowsContainerImage: onebranch.azurecr.io/windows/ltsc2022/vse2022:latest
-  group: ThreadJob_Gallery_API
+- group: ThreadJob_Gallery_API
+- name: ChungJustinAPIKey
+  value: $(variables.ChungJustinAPIKey)
 
 resources:
   repositories:

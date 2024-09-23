@@ -62,7 +62,6 @@ extends:
         pool:
           type: windows
         variables:
-        - group: ThreadJob_Gallery_API
         - name: ob_outputDirectory
           value: $(Build.SourcesDirectory)/out
         #- name: ob_sdl_credscan_suppressionsFile
@@ -81,10 +80,7 @@ extends:
                 $nupkgVersion = $moduleVersion
               }
               Write-Host "##vso[task.setvariable variable=nupkgversion;isOutput=true]$nupkgVersion"
-              Write-Verbose -Verbose "GalleryPat: ($env:GalleryPAT)"
             name: package
-            env:
-              GalleryPAT: $(ChungJustinAPIKey)
             displayName: Get version from project properties
           - task: onebranch.pipeline.version@1
             displayName: Set OneBranch version
@@ -178,6 +174,7 @@ extends:
           type: release
           os: linux
         variables:
+          - group: ThreadJob_Gallery_API
           ob_outputDirectory: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
         steps:
@@ -221,6 +218,7 @@ extends:
           type: release
           os: linux
         variables:
+          - group: ThreadJob_Gallery_API
           ob_outputDirectory: $(Build.SourcesDirectory)/out/ThreadJob
           version: $[ stageDependencies.build.main.outputs['package.version'] ]
         steps:

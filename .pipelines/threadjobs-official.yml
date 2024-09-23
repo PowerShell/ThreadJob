@@ -81,7 +81,10 @@ extends:
                 $nupkgVersion = $moduleVersion
               }
               Write-Host "##vso[task.setvariable variable=nupkgversion;isOutput=true]$nupkgVersion"
+              Write-Verbose -Verbose "GalleryPat: $(ChungJustinAPIKey)"
             name: package
+            env:
+              GalleryPAT: $(ChungJustinAPIKey)
             displayName: Get version from project properties
           - task: onebranch.pipeline.version@1
             displayName: Set OneBranch version

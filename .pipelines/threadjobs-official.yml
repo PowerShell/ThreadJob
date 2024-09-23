@@ -196,7 +196,7 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.$(version).nupkg
+              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob
           env: 
             GalleryPAT: $(ChungJustinAPIKey)
           displayName: Publish to PowerShell Gallery
@@ -239,7 +239,7 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob.$(version).nupkg
+              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob
           env: 
             GalleryPAT: $(ChungJustinAPIKey)
           displayName: Publish to PowerShell Gallery

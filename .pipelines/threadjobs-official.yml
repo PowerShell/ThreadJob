@@ -238,6 +238,7 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
+              Write-Verbose -Verbose -Message "GalleryPAT: $env:GalleryPAT"
               Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob
           env: 
             GalleryPAT: $(ChungJustinAPIKey)

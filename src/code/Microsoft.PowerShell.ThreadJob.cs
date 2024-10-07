@@ -16,6 +16,7 @@ using System.Threading;
 using System.Reflection;
 using System.Diagnostics;
 using SMA = System.Management.Automation;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.ThreadJob
 {
@@ -610,7 +611,9 @@ namespace Microsoft.PowerShell.ThreadJob
                 if (enforceLockdown && !string.IsNullOrEmpty(_filePath))
                 {
                     // If script source is a file, check to see if it is trusted by the lock down policy
-                    lockdownPolicy = getSystemLockdownPolicy.Invoke(null, new object[] { _filePath, null });
+                    MethodInfo[] methods = systemPolicy.GetMethods(BindingFlags.Public | BindingFlags.Static);
+                    MethodInfo getLockdownPolicy = systemPolicy.GetMethod("GetLockdownPolicy", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(SafeHandle) }, null);
+                    lockdownPolicy = getLockdownPolicy.Invoke(null, new object[] { _filePath, null });
                     enforceLockdown = lockdownPolicy.Equals(enforceValue);
 
                     if (!enforceLockdown && (_initSb != null))

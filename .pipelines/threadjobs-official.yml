@@ -36,6 +36,10 @@ resources:
     name: OneBranch.Pipelines/GovernedTemplates
     ref: refs/heads/main
 
+  pipelines:
+    - pipeline: PSPackagesOfficial
+      source: 'PowerShell-Packages-Official'
+
 extends:
   # https://aka.ms/obpipelines/templates
   template: v2/OneBranch.Official.CrossPlat.yml@templates
@@ -73,13 +77,9 @@ extends:
               $manifestData = Import-PowerShellDataFile -Path src/Microsoft.PowerShell.ThreadJob.psd1
               $moduleVersion = $manifestData.ModuleVersion
               Write-Host "##vso[task.setvariable variable=version;isOutput=true]$moduleVersion"
-              if ($manifestData.PrivateData.PsData.Prerelease) {
-                $prerel = $manifestData.PrivateData.PSData.Prerelease
-                $nupkgVersion = "${moduleVersion}-${prerel}"
-              } else {
-                $nupkgVersion = $moduleVersion
-              }
-              Write-Host "##vso[task.setvariable variable=nupkgversion;isOutput=true]$nupkgVersion"
+              $proxyManifestData = Import-PowerShellDataFile -Path src/ThreadJob/ThreadJob.psd1
+              $proxyModuleVersion = $proxyManifestData.ModuleVersion
+              Write-Host "##vso[task.setvariable variable=proxyVersion;isOutput=true]$proxyModuleVersion"
             name: package
             displayName: Get version from project properties
           - task: onebranch.pipeline.version@1
@@ -122,7 +122,7 @@ extends:
               rootFolderOrFile: $(Build.SourcesDirectory)/out/ThreadJob
               includeRootFolder: false
               archiveType: zip
-              archiveFile: out/ThreadJob-v$(package.version).zip
+              archiveFile: out/ThreadJob-v$(package.proxyVersion).zip
           - pwsh: |
               Get-ChildItem | Write-Verbose -Verbose
               Write-Verbose -Verbose -Message "Install Microsoft.PowerShell.ThreadJob module"
@@ -170,20 +170,49 @@ extends:
           inputs:
             - input: pipelineArtifact
               artifactName: drop_build_main
+            - input: pipelineArtifact
+              pipeline: PSPackagesOfficial
+              artifactName: drop_upload_upload_packages
         displayName: Publish to PowerShell Gallery
         pool:
           type: release
-          os: linux
+          os: windows
         variables:
         - group: ThreadJob_Gallery_API
         steps:
-        - task: Bash@3
+        - task: PowerShell@2
           inputs:
             targetType: inline
             script: |
-              sudo tdnf install -y powershell
-            displayName: Install PowerShell
-        - task: powershell@2
+              $localInstallerPath = Get-ChildItem -Path "$(Pipeline.Workspace)/GitHubPackages" -Filter '*win-x64.msi' | Select-Object -First 1 -ExpandProperty FullName
+              if (Test-Path -Path $localInstallerPath) {
+                Write-Verbose -Verbose "Installer found at $localInstallerPath"
+              } else {
+                throw "Installer not found"
+              }
+              Write-Verbose -Verbose "Installing PowerShell via msiexec"
+              Start-Process -FilePath msiexec -ArgumentList "/package $localInstallerPath /quiet REGISTER_MANIFEST=1" -Wait -NoNewWindow
+              $pwshPath = Get-ChildItem -Directory -Path 'C:\Program Files\PowerShell\7*' | Select-Object -First 1 -ExpandProperty FullName
+              if (Test-Path -Path $pwshPath) {
+                Write-Verbose -Verbose "PowerShell installed at $pwshPath"
+                Write-Verbose -Verbose "Adding pwsh to env:PATH"
+                Write-Host "##vso[task.prependpath]$pwshPath"
+              } else {
+                throw "PowerShell not installed"
+              }
+          displayName: Install pwsh 7
+        - task: PowerShell@2
+          inputs:
+            targetType: inline
+            pwsh: true
+            script: |
+              Write-Verbose -Verbose "Pwsh 7 Installed"
+              Write-Verbose -Verbose "env:Path: "
+              $env:PATH -split ';' | ForEach-Object {
+                Write-Verbose -Verbose $_
+              }
+          displayName: Check pwsh 7 installation
+        - task: Powershell@2
           inputs:
             pwsh: true
             targetType: inline
@@ -195,7 +224,7 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob
+              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
           env: 
             GalleryPAT: $(ChungJustinAPIKey)
           displayName: Publish to PowerShell Gallery
@@ -204,7 +233,7 @@ extends:
       variables:
         ob_release_environment: PPE
         drop: $(Pipeline.Workspace)/drop_build_main
-        version: $[ stageDependencies.build.main.outputs['package.version'] ]
+        version: $[ stageDependencies.build.main.outputs['package.proxyVersion'] ]
       dependsOn: [build, manual]
       condition: ${{ parameters.publishProxyToPowerShellGallery }}
       jobs:
@@ -213,24 +242,54 @@ extends:
           inputs:
             - input: pipelineArtifact
               artifactName: drop_build_main
+            - input: pipelineArtifact
+              pipeline: PSPackagesOfficial
+              artifactName: drop_upload_upload_packages
         displayName: Publish to PowerShell Gallery
         pool:
           type: release
-          os: linux
+          os: windows
         variables:
         - group: ThreadJob_Gallery_API
         steps:
-        - task: Bash@3
+        - task: PowerShell@2
           inputs:
             targetType: inline
             script: |
-              sudo tdnf install -y powershell
-            displayName: Install PowerShell
-        - task: powershell@2
+              $localInstallerPath = Get-ChildItem -Path "$(Pipeline.Workspace)/GitHubPackages" -Filter '*win-x64.msi' | Select-Object -First 1 -ExpandProperty FullName
+              if (Test-Path -Path $localInstallerPath) {
+                Write-Verbose -Verbose "Installer found at $localInstallerPath"
+              } else {
+                throw "Installer not found"
+              }
+              Write-Verbose -Verbose "Installing PowerShell via msiexec"
+              Start-Process -FilePath msiexec -ArgumentList "/package $localInstallerPath /quiet REGISTER_MANIFEST=1" -Wait -NoNewWindow
+              $pwshPath = Get-ChildItem -Directory -Path 'C:\Program Files\PowerShell\7*' | Select-Object -First 1 -ExpandProperty FullName
+              if (Test-Path -Path $pwshPath) {
+                Write-Verbose -Verbose "PowerShell installed at $pwshPath"
+                Write-Verbose -Verbose "Adding pwsh to env:PATH"
+                Write-Host "##vso[task.prependpath]$pwshPath"
+              } else {
+                throw "PowerShell not installed"
+              }
+          displayName: Install pwsh 7
+        - task: PowerShell@2
+          inputs:
+            targetType: inline
+            pwsh: true
+            script: |
+              Write-Verbose -Verbose "Pwsh 7 Installed"
+              Write-Verbose -Verbose "env:Path: "
+              $env:PATH -split ';' | ForEach-Object {
+                Write-Verbose -Verbose $_
+              }
+          displayName: Check pwsh 7 installation
+        - task: Powershell@2
           inputs:
             pwsh: true
             targetType: inline
             script: |
+              Write-Verbose -Verbose -Message (Get-Module | Out-String)
               Write-Verbose -Verbose ((Get-Item $(Pipeline.Workspace)).FullName)
               Get-ChildItem $(Pipeline.Workspace) -Recurse -File -Name | Write-Verbose -Verbose
               Write-Verbose -Verbose -Message "Set up CFS repository"
@@ -242,7 +301,9 @@ extends:
               Write-Verbose -Verbose -Message "Test ThreadJob module manifest"
               Test-ModuleManifest -Path $(Pipeline.Workspace)/ThreadJob/ThreadJob.psd1
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob
+              # Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob
+              Write-Verbose -Verbose -Message (Get-Module | Out-String)
+              Write-Verbose -Verbose -Message ((Get-Command Publish-PSResource).Parameters.Keys)
           env: 
             GalleryPAT: $(ChungJustinAPIKey)
           displayName: Publish to PowerShell Gallery

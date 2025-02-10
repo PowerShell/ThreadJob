@@ -159,7 +159,7 @@ extends:
     - stage: release_official_MicrosoftPowerShellThreadJob_module
       displayName: release official
       variables:
-        ob_release_environment: PPE
+        ob_release_environment: Production
         drop: $(Pipeline.Workspace)/drop_build_main
         version: $[ stageDependencies.build.main.outputs['package.version'] ]
       dependsOn: [build, manual]
@@ -231,7 +231,7 @@ extends:
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
       variables:
-        ob_release_environment: PPE
+        ob_release_environment: Production
         drop: $(Pipeline.Workspace)/drop_build_main
         version: $[ stageDependencies.build.main.outputs['package.proxyVersion'] ]
       dependsOn: [build, manual]

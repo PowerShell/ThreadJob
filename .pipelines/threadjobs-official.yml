@@ -72,7 +72,7 @@ extends:
         #  value: $(Build.SourcesDirectory)\.config\suppress.json
         steps:
           - pwsh: |
-              Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)
+              Write-Verbose -Verbose $(Build.SourcesDirectory)
               Get-ChildItem $(Build.SourcesDirectory) -Recurse -File -Name | Write-Verbose -Verbose
               $manifestData = Import-PowerShellDataFile -Path src/Microsoft.PowerShell.ThreadJob.psd1
               $moduleVersion = $manifestData.ModuleVersion
@@ -131,7 +131,7 @@ extends:
               Test-ModuleManifest -Path $(Build.SourcesDirectory)/out/ThreadJob/ThreadJob.psd1
               .\build.ps1 -Publish
               Write-Verbose -Verbose ((Get-Item .).FullName)
-              Write-Verbose -Verbose ((Get-Item $(Build.SourcesDirectory)).FullName)
+              Write-Verbose -Verbose $(Build.SourcesDirectory)
               Get-ChildItem $(Build.SourcesDirectory) -Recurse -File -Name | Write-Verbose -Verbose
             displayName: Package module
           - task: onebranch.pipeline.signing@1
@@ -224,9 +224,7 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
-          env: 
-            GalleryPAT: $(ChungJustinAPIKey)
+              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
           displayName: Publish to PowerShell Gallery
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
@@ -301,9 +299,8 @@ extends:
               Write-Verbose -Verbose -Message "Test ThreadJob module manifest"
               Test-ModuleManifest -Path $(Pipeline.Workspace)/ThreadJob/ThreadJob.psd1
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              # Publish-PSResource -ApiKey $env:GalleryPAT -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob
+              # Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob
               Write-Verbose -Verbose -Message (Get-Module | Out-String)
               Write-Verbose -Verbose -Message ((Get-Command Publish-PSResource).Parameters.Keys)
-          env: 
-            GalleryPAT: $(ChungJustinAPIKey)
           displayName: Publish to PowerShell Gallery
+          

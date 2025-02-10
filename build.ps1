@@ -15,10 +15,6 @@ param (
     [switch]
     $Publish,
 
-    [Parameter(ParameterSetName="publish")]
-    [switch]
-    $Signed,
-
     [ValidateSet("Debug", "Release")]
     [string] $BuildConfiguration = "Debug",
 
@@ -34,7 +30,6 @@ $script:ModuleName = $config.ModuleName
 $script:ProxyModuleName = $config.ProxyModuleName
 $script:SrcPath = $config.SourcePath
 $script:OutDirectory = $config.BuildOutputPath
-$script:ProxyOutDirectory = $config.BuildOutputPath
 $script:SignedDirectory = $config.SignedOutputPath
 $script:TestPath = $config.TestPath
 
@@ -86,9 +81,4 @@ if ($Build.IsPresent)
 {
     $sb = (Get-Item Function:DoBuild).ScriptBlock
     Invoke-ModuleBuild -BuildScript $sb
-}
-
-if ($Publish.IsPresent)
-{
-    Publish-ModulePackage -Signed:$Signed.IsPresent
 }

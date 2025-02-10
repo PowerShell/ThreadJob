@@ -14,8 +14,6 @@ using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading;
 using System.Reflection;
-using System.Diagnostics;
-using SMA = System.Management.Automation;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.ThreadJob
@@ -286,11 +284,11 @@ namespace Microsoft.PowerShell.ThreadJob
         #endregion
     }
 
-    internal sealed class ThreadJobDebugger : SMA.Debugger
+    internal sealed class ThreadJobDebugger : Debugger
     {
         #region Members
 
-        private SMA.Debugger _wrappedDebugger;
+        private Debugger _wrappedDebugger;
         private string _jobName;
 
         #endregion
@@ -300,7 +298,7 @@ namespace Microsoft.PowerShell.ThreadJob
         private ThreadJobDebugger() { }
 
         public ThreadJobDebugger(
-            SMA.Debugger debugger,
+            Debugger debugger,
             string jobName)
         {
             if (debugger == null)
@@ -383,7 +381,7 @@ namespace Microsoft.PowerShell.ThreadJob
         /// <param name="host">PowerShell host.</param>
         /// <param name="path">Current path.</param>
         public override void SetParent(
-            SMA.Debugger parent,
+            Debugger parent,
             IEnumerable<Breakpoint> breakPoints,
             DebuggerResumeAction? startAction,
             PSHost host,
@@ -476,7 +474,7 @@ namespace Microsoft.PowerShell.ThreadJob
         private PSDataCollection<PSObject> _output;
         private bool _runningInitScript;
         private PSHost _streamingHost;
-        private SMA.Debugger _jobDebugger;
+        private Debugger _jobDebugger;
         private string _currentLocationPath;
 
         private const string VERBATIM_ARGUMENT = "--%";
@@ -596,25 +594,25 @@ namespace Microsoft.PowerShell.ThreadJob
 
             // Determine session language mode for Windows platforms
             WarningRecord lockdownWarning = null;
-            if (Environment.OSVersion.Platform.ToString().Equals("Win32NT", StringComparison.OrdinalIgnoreCase))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Assembly assembly = Assembly.LoadFrom(typeof(PSObject).Assembly.Location);
+                Assembly assembly = typeof(PSObject).Assembly;
                 Type systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
                 MethodInfo getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
-                object lockdownPolicy = getSystemLockdownPolicy.Invoke(null, null);
+                object lockdownPolicy = getSystemLockdownPolicy.Invoke(null, Array.Empty<object>());
 
                 Type systemEnforcementMode = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
                 FieldInfo enforce = systemEnforcementMode.GetField("Enforce");
                 object enforceValue = enforce.GetValue(null);
 
-                bool enforceLockdown = lockdownPolicy.Equals(enforceValue);
+                bool enforceLockdown = enforceValue.Equals(lockdownPolicy);
                 if (enforceLockdown && !string.IsNullOrEmpty(_filePath))
                 {
                     // If script source is a file, check to see if it is trusted by the lock down policy
                     MethodInfo[] methods = systemPolicy.GetMethods(BindingFlags.Public | BindingFlags.Static);
                     MethodInfo getLockdownPolicy = systemPolicy.GetMethod("GetLockdownPolicy", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(SafeHandle) }, null);
                     lockdownPolicy = getLockdownPolicy.Invoke(null, new object[] { _filePath, null });
-                    enforceLockdown = lockdownPolicy.Equals(enforceValue);
+                    enforceLockdown = enforceValue.Equals(lockdownPolicy);
 
                     if (!enforceLockdown && (_initSb != null))
                     {
@@ -1016,7 +1014,7 @@ namespace Microsoft.PowerShell.ThreadJob
         /// <summary>
         /// Job Debugger
         /// </summary>
-        public SMA.Debugger Debugger
+        public Debugger Debugger
         {
             get
             {

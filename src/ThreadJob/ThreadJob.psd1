@@ -5,7 +5,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = '.\ThreadJob.psm1'
+RootModule = 'ThreadJob.psm1'
 
 # Version number of this module.
 ModuleVersion = '2.0.4'
@@ -18,7 +18,7 @@ CompanyName = 'Microsoft Corporation'
 Copyright = '(c) Microsoft Corporation. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'ThreadJob module has been renamed to Microsoft.PowerShell.ThreadJob.'
+Description = "The ThreadJob module is now deprecated. Please use the 'Microsoft.PowerShell.ThreadJob' module instead."
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '5.1'

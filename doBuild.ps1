@@ -11,11 +11,11 @@ function DoBuild
 
     # Module build out path
     $BuildOutPath = "${OutDirectory}/${ModuleName}"
-    Write-Verbose -Verbose -Message "Module output file path: '$BuildOutPath'"
+    Write-Verbose -Verbose -Message "Official Module output file path: '$BuildOutPath'"
 
     # Proxy module out path
     $ProxyOutPath = "${OutDirectory}/${ProxyModuleName}"
-    Write-Verbose -Verbose -Message "Module output file path: '$ProxyOutPath'"
+    Write-Verbose -Verbose -Message "Proxy Module output file path: '$ProxyOutPath'"
 
     # Module build source path
     $BuildSrcPath = "bin/${BuildConfiguration}/${BuildFramework}/publish"

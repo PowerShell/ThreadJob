@@ -61,42 +61,6 @@ function Invoke-ModuleBuild {
     Write-Verbose -Verbose -Message "Finished invoking build script"
 }
 
-function Publish-ModulePackage
-{
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [Switch] $Signed
-    )
-
-    Write-Verbose -Verbose -Message "Creating new local package repo"
-    $config = Get-BuildConfiguration
-    $localRepoName = 'packagebuild-local-repo'
-    $localRepoLocation = $config.BuildOutputPath
-
-    Write-Verbose -Verbose -Message "Registering local package repo: $localRepoName"
-    Register-PSResourceRepository -Name $localRepoName -Uri $localRepoLocation -Trusted -Force
-
-    Write-Verbose -Verbose -Message "Publishing package to local repo: $localRepoName"
-    $modulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ModuleName
-
-    # Proxy module
-    Write-Verbose -Verbose -Message "Publishing proxy module to local repo: $localRepoName"
-    $proxyModulePath = Join-Path -Path $config.BuildOutputPath -ChildPath $config.ProxyModuleName
-    Publish-PSResource -Path $proxyModulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
-
-    # Official module
-    Write-Verbose -Verbose -Message "Publishing official module to local repo: $localRepoName"
-    Publish-PSResource -Path $modulePath -Repository $localRepoName -SkipDependenciesCheck -Confirm:$false -Verbose
-
-    $artifactPath = (Get-ChildItem -Path $localRepoLocation -Filter "$($config.ModuleName)*.nupkg").FullName
-    $artifactPath = Resolve-Path -Path $artifactPath
-    Write-Verbose -Verbose -Message "ArtifactPath: $artifactPath"
-
-    Write-Verbose -Verbose -Message "Unregistering local package repo: $localRepoName"
-    Unregister-PSResourceRepository -Name $localRepoName -Confirm:$false
-}
-
 function Install-ModulePackageForTest {
     [CmdletBinding()]
     param (

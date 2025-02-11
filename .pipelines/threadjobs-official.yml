@@ -224,7 +224,7 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
+              # Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
           displayName: Publish to PowerShell Gallery
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
@@ -295,7 +295,7 @@ extends:
               Write-Verbose -Verbose -Message "Install PSResourceGet module"
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Install Microsoft.PowerShell.ThreadJob module"
-              Copy-Item -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob -Destination ($env:PSModulePath -split ':')[0] -Recurse -Force -Verbose
+              Copy-Item -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob -Destination ($env:PSModulePath -split ';')[0] -Recurse -Force -Verbose
               Write-Verbose -Verbose -Message "Test ThreadJob module manifest"
               Test-ModuleManifest -Path $(Pipeline.Workspace)/ThreadJob/ThreadJob.psd1
               Write-Verbose -Verbose -Message "Publish module to PSGallery"

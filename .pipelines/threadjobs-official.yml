@@ -67,7 +67,9 @@ extends:
           type: windows
         variables:
         - name: ob_outputDirectory
-          value: $(Build.SourcesDirectory)/out
+          value: '$(Build.ArtifactStagingDirectory)'
+        - name: ob_sdl_sbom_enabled
+          value: true
         #- name: ob_sdl_credscan_suppressionsFile
         #  value: $(Build.SourcesDirectory)\.config\suppress.json
         steps:
@@ -98,31 +100,6 @@ extends:
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5
               .\build.ps1 -clean -Build -BuildConfiguration Release -BuildFramework netstandard2.0
             displayName: Build
-          - task: onebranch.pipeline.signing@1
-            displayName: Sign 1st-party files
-            inputs:
-              command: sign
-              signing_profile: external_distribution
-              search_root: $(Build.SourcesDirectory)/out
-              files_to_sign: |
-                **/*.psd1;
-                **/*.ps1xml;
-                **/*.psm1;
-                **/Microsoft.PowerShell.*.dll;
-          - task: ArchiveFiles@2
-            displayName: Zip module
-            inputs:
-              rootFolderOrFile: $(Build.SourcesDirectory)/out/Microsoft.PowerShell.ThreadJob
-              includeRootFolder: false
-              archiveType: zip
-              archiveFile: out/Microsoft.PowerShell.ThreadJob-v$(package.version).zip
-          - task: ArchiveFiles@2
-            displayName: Zip module
-            inputs:
-              rootFolderOrFile: $(Build.SourcesDirectory)/out/ThreadJob
-              includeRootFolder: false
-              archiveType: zip
-              archiveFile: out/ThreadJob-v$(package.proxyVersion).zip
           - pwsh: |
               Get-ChildItem | Write-Verbose -Verbose
               Write-Verbose -Verbose -Message "Install Microsoft.PowerShell.ThreadJob module"
@@ -141,6 +118,14 @@ extends:
               signing_profile: external_distribution
               search_root: $(Build.SourcesDirectory)
               files_to_sign: "**/*.nupkg"
+          - pwsh: |
+              Get-ChildItem -Path $(Build.SourcesDirectory)/out -Filter '*.nupkg' -Recurse
+                | ForEach-Object {
+                  Write-Verbose -Verbose "Copying $($_.FullName) to $(ob_outputDirectory)"
+                  Copy-Item -Path $_.FullName -Destination $(ob_outputDirectory) -Force
+                }
+              Get-ChildItem -Path $(ob_outputDirectory) -Recurse -File -Name | Write-Verbose -Verbose
+            displayName: Upload Signed Nupkgs
     - stage: manual
       dependsOn: build
       jobs:
@@ -217,7 +202,6 @@ extends:
             pwsh: true
             targetType: inline
             script: |
-              Write-Verbose -Verbose ((Get-Item $(Pipeline.Workspace)).FullName)
               Get-ChildItem $(Pipeline.Workspace) -Recurse -File -Name | Write-Verbose -Verbose
               Write-Verbose -Verbose -Message "Set up CFS repository"
               Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted -ErrorAction Continue

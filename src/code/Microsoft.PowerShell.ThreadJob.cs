@@ -1100,20 +1100,16 @@ namespace Microsoft.PowerShell.ThreadJob
 
         private void SetJobState(JobState jobState, Exception reason, bool disposeRunspace = false)
         {
+            // base.SetJobState(jobState, reason);
             // Using Reflection here because this method is using a newer SetJobState method overload that takes in jobstate and reason.
-            Assembly assembly = Assembly.LoadFrom(typeof(PSObject).Assembly.Location);
-            Type job2Type = assembly.GetType("System.Management.Automation.Job2");
+            MethodInfo s_setJobStateDelegate = typeof(Job2).GetMethod(
+                "SetJobState",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                new Type[] { typeof(JobState), typeof(Exception) },
+                null);
 
-            if (job2Type == null)
-            {
-                throw new InvalidOperationException("Job2 type not found in the specified assembly.");
-            }
-
-            MethodInfo setJobStateMethod = job2Type.GetMethod("SetJobState", BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(JobState), typeof(Exception) }, null);
-            if (setJobStateMethod != null)
-            {
-                setJobStateMethod.Invoke(this, new object[] { jobState, reason });
-            }
+            s_setJobStateDelegate.Invoke(this, new object[] { jobState, reason });
 
             if (disposeRunspace)
             {

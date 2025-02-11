@@ -124,7 +124,7 @@ stages:
         }
         else
         {
-          $(Build.SourcesDirectory)/build.ps1 -Publish -Signed
+          $(Build.SourcesDirectory)/build.ps1 -Publish
         }
       displayName: Publish module nuget package and upload package artifact
       condition: succeeded()

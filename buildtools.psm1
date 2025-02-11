@@ -37,13 +37,6 @@ function Get-BuildConfiguration {
     $configObj.HelpPath = Join-Path $projectRoot -ChildPath $configObj.HelpPath
     $configObj.BuildOutputPath = Join-Path $projectRoot -ChildPath $configObj.BuildOutputPath
 
-    if ($configObj.SignedOutputPath) {
-        $configObj.SignedOutputPath = Join-Path $projectRoot -ChildPath $configObj.SignedOutputPath
-    }
-    else {
-        $configObj | Add-Member -MemberType NoteProperty -Name SignedOutputPath -Value (Join-Path $projectRoot -ChildPath 'signed')
-    }
-
     return $configObj
 }
 
@@ -63,12 +56,6 @@ function Invoke-ModuleBuild {
 
 function Publish-ModulePackage
 {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [Switch] $Signed
-    )
-
     Write-Verbose -Verbose -Message "Creating new local package repo"
     $config = Get-BuildConfiguration
     $localRepoName = 'packagebuild-local-repo'

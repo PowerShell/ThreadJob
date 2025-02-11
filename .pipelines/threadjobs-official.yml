@@ -202,11 +202,6 @@ extends:
             pwsh: true
             targetType: inline
             script: |
-              Get-ChildItem $(Pipeline.Workspace) -Recurse -File -Name | Write-Verbose -Verbose
-              Write-Verbose -Verbose -Message "Set up CFS repository"
-              Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted -ErrorAction Continue
-              Write-Verbose -Verbose -Message "Install PSResourceGet module"
-              Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
               # Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
           displayName: Publish to PowerShell Gallery
@@ -271,20 +266,11 @@ extends:
             pwsh: true
             targetType: inline
             script: |
-              Write-Verbose -Verbose -Message (Get-Module | Out-String)
-              Write-Verbose -Verbose ((Get-Item $(Pipeline.Workspace)).FullName)
-              Get-ChildItem $(Pipeline.Workspace) -Recurse -File -Name | Write-Verbose -Verbose
-              Write-Verbose -Verbose -Message "Set up CFS repository"
-              Register-PSRepository -Name CFS -SourceLocation "https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/nuget/v2" -InstallationPolicy Trusted -ErrorAction Continue
-              Write-Verbose -Verbose -Message "Install PSResourceGet module"
-              Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5 -ErrorAction Continue -Force
               Write-Verbose -Verbose -Message "Install Microsoft.PowerShell.ThreadJob module"
               Copy-Item -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob -Destination ($env:PSModulePath -split ';')[0] -Recurse -Force -Verbose
               Write-Verbose -Verbose -Message "Test ThreadJob module manifest"
               Test-ModuleManifest -Path $(Pipeline.Workspace)/ThreadJob/ThreadJob.psd1
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
               # Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob
-              Write-Verbose -Verbose -Message (Get-Module | Out-String)
-              Write-Verbose -Verbose -Message ((Get-Command Publish-PSResource).Parameters.Keys)
           displayName: Publish to PowerShell Gallery
           

@@ -8,7 +8,7 @@
 RootModule = 'ThreadJob.psm1'
 
 # Version number of this module.
-ModuleVersion = '2.0.4'
+ModuleVersion = '2.1.0'
 
 # ID used to uniquely identify this module
 GUID = '0e7b895d-2fec-43f7-8cae-11e8d16f6e40'

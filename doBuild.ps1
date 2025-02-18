@@ -93,7 +93,7 @@ function DoBuild
             # Place build results
             if (! (Test-Path -Path "$BuildSrcPath/${ModuleName}.dll"))
             {
-                # throw "Expected binary was not created: $BuildSrcPath/${ModuleName}.dll"
+                throw "Expected binary was not created: $BuildSrcPath/${ModuleName}.dll"
             }
 
             Write-Verbose -Verbose -Message "Copying implementation assembly $BuildSrcPath/${ModuleName}.dll to $BuildOutPath"

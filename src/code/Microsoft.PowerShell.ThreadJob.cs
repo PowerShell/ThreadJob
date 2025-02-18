@@ -476,6 +476,13 @@ namespace Microsoft.PowerShell.ThreadJob
         private PSHost _streamingHost;
         private Debugger _jobDebugger;
         private string _currentLocationPath;
+        private static readonly MethodInfo getSystemLockdownPolicy;
+        private static readonly Assembly assembly;
+        private static readonly Type systemPolicy;
+        private static readonly Type systemEnforcementMode;
+        private static readonly FieldInfo enforce;
+        private static readonly MethodInfo getFileLockdownPolicy;
+        private static readonly MethodInfo s_setJobStateDelegate;
 
         private const string VERBATIM_ARGUMENT = "--%";
 
@@ -502,6 +509,18 @@ namespace Microsoft.PowerShell.ThreadJob
         static ThreadJob()
         {
             s_JobQueue = new ThreadJobQueue(5);
+            assembly = typeof(PSObject).Assembly;
+            systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
+            getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
+            systemEnforcementMode = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
+            enforce = systemEnforcementMode.GetField("Enforce");
+            getFileLockdownPolicy = systemPolicy.GetMethod("GetLockdownPolicy", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(SafeHandle) }, null);
+            s_setJobStateDelegate = typeof(Job2).GetMethod(
+                "SetJobState",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                new Type[] { typeof(JobState), typeof(Exception) },
+                null);
         }
 
         private ThreadJob()
@@ -596,22 +615,14 @@ namespace Microsoft.PowerShell.ThreadJob
             WarningRecord lockdownWarning = null;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Assembly assembly = typeof(PSObject).Assembly;
-                Type systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
-                MethodInfo getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
                 object lockdownPolicy = getSystemLockdownPolicy.Invoke(null, Array.Empty<object>());
-
-                Type systemEnforcementMode = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
-                FieldInfo enforce = systemEnforcementMode.GetField("Enforce");
                 object enforceValue = enforce.GetValue(null);
-
                 bool enforceLockdown = enforceValue.Equals(lockdownPolicy);
+
                 if (enforceLockdown && !string.IsNullOrEmpty(_filePath))
                 {
                     // If script source is a file, check to see if it is trusted by the lock down policy
-                    MethodInfo[] methods = systemPolicy.GetMethods(BindingFlags.Public | BindingFlags.Static);
-                    MethodInfo getLockdownPolicy = systemPolicy.GetMethod("GetLockdownPolicy", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(SafeHandle) }, null);
-                    lockdownPolicy = getLockdownPolicy.Invoke(null, new object[] { _filePath, null });
+                    lockdownPolicy = getFileLockdownPolicy.Invoke(null, new object[] { _filePath, null });
                     enforceLockdown = enforceValue.Equals(lockdownPolicy);
 
                     if (!enforceLockdown && (_initSb != null))
@@ -1102,13 +1113,6 @@ namespace Microsoft.PowerShell.ThreadJob
         {
             // base.SetJobState(jobState, reason);
             // Using Reflection here because this method is using a newer SetJobState method overload that takes in jobstate and reason.
-            MethodInfo s_setJobStateDelegate = typeof(Job2).GetMethod(
-                "SetJobState",
-                BindingFlags.Instance | BindingFlags.NonPublic,
-                binder: null,
-                new Type[] { typeof(JobState), typeof(Exception) },
-                null);
-
             s_setJobStateDelegate.Invoke(this, new object[] { jobState, reason });
 
             if (disposeRunspace)

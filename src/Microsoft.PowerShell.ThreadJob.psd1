@@ -60,6 +60,9 @@ PrivateData = @{
         # A URL to the main website for this project.
         ProjectUri = 'https://github.com/Powershell/ThreadJob'
 
+        # A URL to get more information about this module
+        HelpInfoURI = 'https://go.microsoft.com/fwlink/?linkid=2305300'
+
         # A URL to an icon representing this module.
         # IconUri = ''
 

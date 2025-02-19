@@ -476,13 +476,15 @@ namespace Microsoft.PowerShell.ThreadJob
         private PSHost _streamingHost;
         private Debugger _jobDebugger;
         private string _currentLocationPath;
-        private static readonly MethodInfo getSystemLockdownPolicy;
-        private static readonly Assembly assembly;
-        private static readonly Type systemPolicy;
-        private static readonly Type systemEnforcementMode;
-        private static readonly FieldInfo enforce;
-        private static readonly MethodInfo getFileLockdownPolicy;
+
+        /// <summary>
+        /// Reflection members for setting job state.
+        /// </summary>
+        private static readonly MethodInfo s_getSystemLockdownPolicy;
+        private static readonly FieldInfo s_enforce;
+        private static readonly MethodInfo s_getFileLockdownPolicy;
         private static readonly MethodInfo s_setJobStateDelegate;
+        private static readonly object s_enforceValue;
 
         private const string VERBATIM_ARGUMENT = "--%";
 
@@ -509,18 +511,22 @@ namespace Microsoft.PowerShell.ThreadJob
         static ThreadJob()
         {
             s_JobQueue = new ThreadJobQueue(5);
-            assembly = typeof(PSObject).Assembly;
-            systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
-            getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
-            systemEnforcementMode = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
-            enforce = systemEnforcementMode.GetField("Enforce");
-            getFileLockdownPolicy = systemPolicy.GetMethod("GetLockdownPolicy", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(SafeHandle) }, null);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assembly assembly = typeof(PSObject).Assembly;
+                Type systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
+                s_getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
+                Type systemEnforcementMode = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
+                s_enforce = systemEnforcementMode.GetField("Enforce");
+                s_enforceValue = s_enforce.GetValue(null);
+                s_getFileLockdownPolicy = systemPolicy.GetMethod("GetLockdownPolicy", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(SafeHandle) }, null);
+            }
             s_setJobStateDelegate = typeof(Job2).GetMethod(
-                "SetJobState",
-                BindingFlags.Instance | BindingFlags.NonPublic,
-                binder: null,
-                new Type[] { typeof(JobState), typeof(Exception) },
-                null);
+                    "SetJobState",
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    binder: null,
+                    new Type[] { typeof(JobState), typeof(Exception) },
+                    null);
         }
 
         private ThreadJob()
@@ -615,15 +621,14 @@ namespace Microsoft.PowerShell.ThreadJob
             WarningRecord lockdownWarning = null;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                object lockdownPolicy = getSystemLockdownPolicy.Invoke(null, Array.Empty<object>());
-                object enforceValue = enforce.GetValue(null);
-                bool enforceLockdown = enforceValue.Equals(lockdownPolicy);
+                object lockdownPolicy = s_getSystemLockdownPolicy.Invoke(null, Array.Empty<object>());
+                bool enforceLockdown = s_enforceValue.Equals(lockdownPolicy);
 
                 if (enforceLockdown && !string.IsNullOrEmpty(_filePath))
                 {
                     // If script source is a file, check to see if it is trusted by the lock down policy
-                    lockdownPolicy = getFileLockdownPolicy.Invoke(null, new object[] { _filePath, null });
-                    enforceLockdown = enforceValue.Equals(lockdownPolicy);
+                    lockdownPolicy = s_getFileLockdownPolicy.Invoke(null, new object[] { _filePath, null });
+                    enforceLockdown = s_enforceValue.Equals(lockdownPolicy);
 
                     if (!enforceLockdown && (_initSb != null))
                     {

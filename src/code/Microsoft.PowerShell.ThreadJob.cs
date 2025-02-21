@@ -481,9 +481,8 @@ namespace Microsoft.PowerShell.ThreadJob
         /// Reflection members for setting job state.
         /// </summary>
         private static readonly MethodInfo s_getSystemLockdownPolicy;
-        private static readonly FieldInfo s_enforce;
         private static readonly MethodInfo s_getFileLockdownPolicy;
-        private static readonly MethodInfo s_setJobStateDelegate;
+        private static readonly MethodInfo s_setJobState;
         private static readonly object s_enforceValue;
 
         private const string VERBATIM_ARGUMENT = "--%";
@@ -517,16 +516,17 @@ namespace Microsoft.PowerShell.ThreadJob
                 Type systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
                 s_getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
                 Type systemEnforcementMode = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
-                s_enforce = systemEnforcementMode.GetField("Enforce");
-                s_enforceValue = s_enforce.GetValue(null);
+                FieldInfo enforce = systemEnforcementMode.GetField("Enforce");
+                s_enforceValue = enforce.GetValue(null);
                 s_getFileLockdownPolicy = systemPolicy.GetMethod("GetLockdownPolicy", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(SafeHandle) }, null);
             }
-            s_setJobStateDelegate = typeof(Job2).GetMethod(
-                    "SetJobState",
-                    BindingFlags.Instance | BindingFlags.NonPublic,
-                    binder: null,
-                    new Type[] { typeof(JobState), typeof(Exception) },
-                    null);
+
+            s_setJobState = typeof(Job2).GetMethod(
+                "SetJobState",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                new Type[] { typeof(JobState), typeof(Exception) },
+                null);
         }
 
         private ThreadJob()
@@ -1118,7 +1118,7 @@ namespace Microsoft.PowerShell.ThreadJob
         {
             // base.SetJobState(jobState, reason);
             // Using Reflection here because this method is using a newer SetJobState method overload that takes in jobstate and reason.
-            s_setJobStateDelegate.Invoke(this, new object[] { jobState, reason });
+            s_setJobState.Invoke(this, new object[] { jobState, reason });
 
             if (disposeRunspace)
             {

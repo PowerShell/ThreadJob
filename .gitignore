@@ -19,3 +19,5 @@ xhtml/
 **/.vscode/**
 **/out/**
 **/bin/**
+.vs/**/*
+**/*.sln

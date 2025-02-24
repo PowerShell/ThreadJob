@@ -11,7 +11,11 @@ function DoBuild
 
     # Module build out path
     $BuildOutPath = "${OutDirectory}/${ModuleName}"
-    Write-Verbose -Verbose -Message "Module output file path: '$BuildOutPath'"
+    Write-Verbose -Verbose -Message "Official Module output file path: '$BuildOutPath'"
+
+    # Proxy module out path
+    $ProxyOutPath = "${OutDirectory}/${ProxyModuleName}"
+    Write-Verbose -Verbose -Message "Proxy Module output file path: '$ProxyOutPath'"
 
     # Module build source path
     $BuildSrcPath = "bin/${BuildConfiguration}/${BuildFramework}/publish"
@@ -20,6 +24,11 @@ function DoBuild
     # Copy psd1 file
     Write-Verbose -Verbose "Copy-Item ${SrcPath}/${ModuleName}.psd1 to $BuildOutPath"
     Copy-Item "${SrcPath}/${ModuleName}.psd1" "$BuildOutPath"
+
+    # Copy Proxy psd1 and psm1 file
+    Write-Verbose -Verbose -Message "Copying proxy module files to '$ProxyOutPath'"
+    Copy-Item "${SrcPath}/${ProxyModuleName}/${ProxyModuleName}.psd1" "$ProxyOutPath"
+    Copy-Item "${SrcPath}/${ProxyModuleName}/${ProxyModuleName}.psm1" "$ProxyOutPath"
 
     # Copy help
     Write-Verbose -Verbose -Message "Copying help files to '$BuildOutPath'"
@@ -43,8 +52,19 @@ function DoBuild
 
             # Check for dotnet for Windows (we only build on Windows platforms).
             if ($null -eq $dotnetCommand) {
-                Write-Verbose -Verbose -Message "dotnet.exe cannot be found in current path. Looking in ProgramFiles path."
-                $dotnetCommandPath = Join-Path -Path $env:ProgramFiles -ChildPath "dotnet\dotnet.exe"
+                if ($IsWindows) {
+                    Write-Verbose -Verbose -Message "dotnet.exe cannot be found in current path. Looking in ProgramFiles path."
+                    $dotnetCommandPath = Join-Path -Path $env:ProgramFiles -ChildPath "dotnet\dotnet.exe"
+                } elseif ($IsLinux) {
+                    Write-Verbose -Verbose -Message "dotnet cannot be found in current path. Looking in /usr/share/dotnet path."
+                    $dotnetCommandPath = "/usr/share/dotnet/dotnet"
+                } elseif ($IsMaxOS) {
+                    Write-Verbose -Verbose -Message "dotnet cannot be found in current path. Looking in /usr/local/share/dotnet path."
+                    $dotnetCommandPath = "/usr/local/share/dotnet/dotnet"
+                } else {
+                    throw "Unsupported operating system."
+                }
+
                 $dotnetCommand = Get-Command -Name $dotnetCommandPath -ErrorAction Ignore
                 if ($null -eq $dotnetCommand) {
                     throw "Dotnet.exe cannot be found: $dotnetCommandPath is unavailable for build."
@@ -60,13 +80,15 @@ function DoBuild
             Write-Verbose -Verbose -Message "Building location: PSScriptRoot: $PSScriptRoot, PWD: $pwd"
             $buildCommand = "$($dotnetCommand.Name) publish --configuration $BuildConfiguration --framework $BuildFramework --output $BuildSrcPath"
             Write-Verbose -Verbose -Message "Starting dotnet build command: $buildCommand"
-            Invoke-Expression -Command $buildCommand
+            # Capture the output and error streams
+            $output = Invoke-Expression -Command $buildCommand 2>&1
+            Write-Verbose -Verbose -Message "Build output: $output"
 
-            # Dump build source output directory
-            #  $outResultsPath = (Resolve-Path -Path ".").ProviderPath
-            #  Write-Verbose -Verbose -Message "Dumping expected results output path: $outResultsPath"
-            #  $outResults = Get-ChildItem -Path $outResultsPath -Recurse | Out-String
-            #  Write-Verbose -Verbose -Message $outResults
+            #Dump build source output directory
+            $outResultsPath = (Resolve-Path -Path ".").ProviderPath
+            Write-Verbose -Verbose -Message "Dumping expected results output path: $outResultsPath"
+            $outResults = Get-ChildItem -Path $outResultsPath -Recurse | Out-String
+            Write-Verbose -Verbose -Message $outResults
 
             # Place build results
             if (! (Test-Path -Path "$BuildSrcPath/${ModuleName}.dll"))

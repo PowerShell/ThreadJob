@@ -15,15 +15,11 @@ param (
     [switch]
     $Publish,
 
-    [Parameter(ParameterSetName="publish")]
-    [switch]
-    $Signed,
-
     [ValidateSet("Debug", "Release")]
     [string] $BuildConfiguration = "Debug",
 
-    [ValidateSet("net461")]
-    [string] $BuildFramework = "net461"
+    [ValidateSet("netstandard2.0")]
+    [string] $BuildFramework = "netstandard2.0"
 )
 
 Import-Module -Name "$PSScriptRoot/buildtools.psd1" -Force
@@ -31,9 +27,9 @@ Import-Module -Name "$PSScriptRoot/buildtools.psd1" -Force
 $config = Get-BuildConfiguration -ConfigPath $PSScriptRoot
 
 $script:ModuleName = $config.ModuleName
+$script:ProxyModuleName = $config.ProxyModuleName
 $script:SrcPath = $config.SourcePath
 $script:OutDirectory = $config.BuildOutputPath
-$script:SignedDirectory = $config.SignedOutputPath
 $script:TestPath = $config.TestPath
 
 $script:ModuleRoot = $PSScriptRoot
@@ -47,13 +43,9 @@ if ($env:TF_BUILD) {
     $vstsCommandString = "vso[task.setvariable variable=BUILD_OUTPUT_PATH]$OutDirectory"
     Write-Host ("sending " + $vstsCommandString)
     Write-Host "##$vstsCommandString"
-
-    $vstsCommandString = "vso[task.setvariable variable=SIGNED_OUTPUT_PATH]$SignedDirectory"
-    Write-Host ("sending " + $vstsCommandString)
-    Write-Host "##$vstsCommandString"
 }
 
-. $PSScriptRoot/dobuild.ps1
+. $PSScriptRoot/doBuild.ps1
 
 if ($Clean -and (Test-Path $OutDirectory))
 {
@@ -73,6 +65,7 @@ if ($Clean -and (Test-Path $OutDirectory))
 if (-not (Test-Path $OutDirectory))
 {
     $script:OutModule = New-Item -ItemType Directory -Path (Join-Path $OutDirectory $ModuleName)
+    $script:ProxyOutModule = New-Item -itemType Directory -Path (Join-Path $OutDirectory $ProxyModuleName)
 }
 else
 {
@@ -87,5 +80,6 @@ if ($Build.IsPresent)
 
 if ($Publish.IsPresent)
 {
-    Publish-ModulePackage -Signed:$Signed.IsPresent
+    Publish-ModulePackage
 }
+

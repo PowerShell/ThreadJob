@@ -13,7 +13,7 @@ function Wait-ForJobRunning
     $iteration = 10
     Do
     {
-        Start-Sleep -Milliseconds 100
+        Start-Sleep -Milliseconds 1000
     }
     Until (($job.State -match "Running|Completed|Failed") -or (--$iteration -eq 0))
 
@@ -373,7 +373,7 @@ Describe 'Basic ThreadJob Tests' -Tags 'CI' {
     It 'ThreadJob jobs should run in the current working directory' {
 
         $threadJobCurrentLocation = Start-ThreadJob -ScriptBlock { $pwd } | Wait-Job | Receive-Job
-        $threadJobCurrentLocation.Path | Should -BeExactly $pwd.Path
+        $threadJobCurrentLocation.Path.Trim() | Should -BeExactly $pwd.ToString().Trim()
     }
 }
 

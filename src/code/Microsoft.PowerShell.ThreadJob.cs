@@ -11,9 +11,10 @@ using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Management.Automation.Language;
 using System.Management.Automation.Runspaces;
-using System.Management.Automation.Security;
 using System.Text;
 using System.Threading;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.PowerShell.ThreadJob
 {
@@ -476,6 +477,14 @@ namespace Microsoft.PowerShell.ThreadJob
         private Debugger _jobDebugger;
         private string _currentLocationPath;
 
+        /// <summary>
+        /// Reflection members for setting job state.
+        /// </summary>
+        private static readonly MethodInfo s_getSystemLockdownPolicy;
+        private static readonly MethodInfo s_getFileLockdownPolicy;
+        private static readonly MethodInfo s_setJobState;
+        private static readonly object s_enforceValue;
+
         private const string VERBATIM_ARGUMENT = "--%";
 
         private static ThreadJobQueue s_JobQueue;
@@ -501,6 +510,23 @@ namespace Microsoft.PowerShell.ThreadJob
         static ThreadJob()
         {
             s_JobQueue = new ThreadJobQueue(5);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Assembly assembly = typeof(PSObject).Assembly;
+                Type systemPolicy = assembly.GetType("System.Management.Automation.Security.SystemPolicy");
+                s_getSystemLockdownPolicy = systemPolicy.GetMethod("GetSystemLockdownPolicy", BindingFlags.Public | BindingFlags.Static);
+                Type systemEnforcementMode = assembly.GetType("System.Management.Automation.Security.SystemEnforcementMode");
+                FieldInfo enforce = systemEnforcementMode.GetField("Enforce");
+                s_enforceValue = enforce.GetValue(null);
+                s_getFileLockdownPolicy = systemPolicy.GetMethod("GetLockdownPolicy", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(SafeHandle) }, null);
+            }
+
+            s_setJobState = typeof(Job2).GetMethod(
+                "SetJobState",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                new Type[] { typeof(JobState), typeof(Exception) },
+                null);
         }
 
         private ThreadJob()
@@ -593,13 +619,16 @@ namespace Microsoft.PowerShell.ThreadJob
 
             // Determine session language mode for Windows platforms
             WarningRecord lockdownWarning = null;
-            if (Environment.OSVersion.Platform.ToString().Equals("Win32NT", StringComparison.OrdinalIgnoreCase))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                bool enforceLockdown = (SystemPolicy.GetSystemLockdownPolicy() == SystemEnforcementMode.Enforce);
+                object lockdownPolicy = s_getSystemLockdownPolicy.Invoke(null, Array.Empty<object>());
+                bool enforceLockdown = s_enforceValue.Equals(lockdownPolicy);
+
                 if (enforceLockdown && !string.IsNullOrEmpty(_filePath))
                 {
                     // If script source is a file, check to see if it is trusted by the lock down policy
-                    enforceLockdown = (SystemPolicy.GetLockdownPolicy(_filePath, null) == SystemEnforcementMode.Enforce);
+                    lockdownPolicy = s_getFileLockdownPolicy.Invoke(null, new object[] { _filePath, null });
+                    enforceLockdown = s_enforceValue.Equals(lockdownPolicy);
 
                     if (!enforceLockdown && (_initSb != null))
                     {
@@ -639,11 +668,11 @@ namespace Microsoft.PowerShell.ThreadJob
                         break;
 
                     case PSInvocationState.Stopped:
-                        SetJobState(JobState.Stopped, newStateInfo.Reason, disposeRunspace:true);
+                        SetJobState(JobState.Stopped, newStateInfo.Reason, disposeRunspace: true);
                         break;
 
                     case PSInvocationState.Failed:
-                        SetJobState(JobState.Failed, newStateInfo.Reason, disposeRunspace:true);
+                        SetJobState(JobState.Failed, newStateInfo.Reason, disposeRunspace: true);
                         break;
 
                     case PSInvocationState.Completed:
@@ -655,7 +684,7 @@ namespace Microsoft.PowerShell.ThreadJob
                         }
                         else
                         {
-                            SetJobState(JobState.Completed, newStateInfo.Reason, disposeRunspace:true);
+                            SetJobState(JobState.Completed, newStateInfo.Reason, disposeRunspace: true);
                         }
                         break;
                 }
@@ -1087,7 +1116,10 @@ namespace Microsoft.PowerShell.ThreadJob
 
         private void SetJobState(JobState jobState, Exception reason, bool disposeRunspace = false)
         {
-            base.SetJobState(jobState, reason);
+            // base.SetJobState(jobState, reason);
+            // Using Reflection here because this method is using a newer SetJobState method overload that takes in jobstate and reason.
+            s_setJobState.Invoke(this, new object[] { jobState, reason });
+
             if (disposeRunspace)
             {
                 _rs.Dispose();

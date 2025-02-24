@@ -100,6 +100,18 @@ extends:
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5
               .\build.ps1 -clean -Build -BuildConfiguration Release -BuildFramework netstandard2.0
             displayName: Build
+          # Still have to sign eventhough nupkg is the only thing uploaded.
+          - task: onebranch.pipeline.signing@1
+            displayName: Sign 1st-party files
+            inputs:
+              command: sign
+              signing_profile: external_distribution
+              search_root: $(Build.SourcesDirectory)/out
+              files_to_sign: |
+                **/*.psd1;
+                **/*.ps1xml;
+                **/*.psm1;
+                **/Microsoft.PowerShell.*.dll;
           - pwsh: |
               Get-ChildItem | Write-Verbose -Verbose
               Write-Verbose -Verbose -Message "Install Microsoft.PowerShell.ThreadJob module"

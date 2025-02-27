@@ -219,7 +219,7 @@ extends:
             targetType: inline
             script: |
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
+              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -NupkgPath $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
           displayName: Publish to PowerShell Gallery
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
@@ -282,11 +282,7 @@ extends:
             pwsh: true
             targetType: inline
             script: |
-              Write-Verbose -Verbose -Message "Install Microsoft.PowerShell.ThreadJob module"
-              Copy-Item -Path $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob -Destination ($env:PSModulePath -split ';')[0] -Recurse -Force -Verbose
-              Write-Verbose -Verbose -Message "Test ThreadJob module manifest"
-              Test-ModuleManifest -Path $(Pipeline.Workspace)/ThreadJob/ThreadJob.psd1
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -Path $(Pipeline.Workspace)/ThreadJob
+              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -NupkgPath $(Pipeline.Workspace)/ThreadJob.$(version).nupkg
           displayName: Publish to PowerShell Gallery
           

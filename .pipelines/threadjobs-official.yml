@@ -104,7 +104,7 @@ extends:
               Install-Module -Repository CFS -Name Microsoft.PowerShell.PSResourceGet -MinimumVersion 1.0.5
               .\build.ps1 -clean -Build -BuildConfiguration Release -BuildFramework netstandard2.0
             displayName: Build
-          # Still have to sign eventhough nupkg is the only thing uploaded.
+          # Add signing for all files for now.
           - task: onebranch.pipeline.signing@1
             displayName: Sign 1st-party files
             inputs:

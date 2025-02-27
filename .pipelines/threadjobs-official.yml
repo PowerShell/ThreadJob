@@ -65,6 +65,10 @@ extends:
     - stage: build
       jobs:
       - job: main
+        templateContext:
+          sdl:
+            codeSignValidation:
+              targetPathExclusionPattern: \"^(?!.*\\.nupkg$).*\"
         displayName: Build package
         pool:
           type: windows

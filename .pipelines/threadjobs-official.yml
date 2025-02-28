@@ -19,6 +19,10 @@ parameters:
     displayName: 'Publish proxy module to PowerShell gallery'
     type: boolean
     default: false
+  - name : ReleaseEnvironment
+    displayName: 'Release environment'
+    type: string
+    default: 'Production'
 
 variables:
   BuildConfiguration: Release
@@ -160,7 +164,7 @@ extends:
     - stage: release_official_MicrosoftPowerShellThreadJob_module
       displayName: release official
       variables:
-        ob_release_environment: Production
+        ob_release_environment: ${{ parameters.ReleaseEnvironment }}
         drop: $(Pipeline.Workspace)/drop_build_main
         version: $[ stageDependencies.build.main.outputs['package.version'] ]
       dependsOn: [build, manual]
@@ -212,6 +216,7 @@ extends:
               $env:PATH -split ';' | ForEach-Object {
                 Write-Verbose -Verbose $_
               }
+              Get-ChildItem -Path $(Pipeline.Workspace) -Recurse -File -Name | Write-Verbose -Verbose
           displayName: Check pwsh 7 installation
         - task: Powershell@2
           inputs:
@@ -219,12 +224,12 @@ extends:
             targetType: inline
             script: |
               Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -NupkgPath $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.($version).nupkg
+              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -NupkgPath $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.$(version).nupkg
           displayName: Publish to PowerShell Gallery
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
       variables:
-        ob_release_environment: Production
+        ob_release_environment: ${{ parameters.ReleaseEnvironment }}
         drop: $(Pipeline.Workspace)/drop_build_main
         version: $[ stageDependencies.build.main.outputs['package.proxyVersion'] ]
       dependsOn: [build, manual]
@@ -276,6 +281,7 @@ extends:
               $env:PATH -split ';' | ForEach-Object {
                 Write-Verbose -Verbose $_
               }
+              Get-ChildItem -Path $(Pipeline.Workspace) -Recurse -File -Name | Write-Verbose -Verbose
           displayName: Check pwsh 7 installation
         - task: Powershell@2
           inputs:

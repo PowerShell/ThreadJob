@@ -40,10 +40,6 @@ resources:
     name: OneBranch.Pipelines/GovernedTemplates
     ref: refs/heads/main
 
-  pipelines:
-    - pipeline: PSPackagesOfficial
-      source: 'PowerShell-Packages-Official'
-
 extends:
   # https://aka.ms/obpipelines/templates
   template: v2/OneBranch.Official.CrossPlat.yml@templates
@@ -146,21 +142,6 @@ extends:
                 }
               Get-ChildItem -Path $(ob_outputDirectory) -Recurse -File -Name | Write-Verbose -Verbose
             displayName: Upload Signed Nupkgs
-    - stage: manual
-      dependsOn: build
-      jobs:
-      - job: validation
-        displayName: Manual validation
-        pool:
-          type: agentless
-        timeoutInMinutes: 1440
-        steps:
-        - task: ManualValidation@0
-          displayName: Wait 24 hours for validation
-          inputs:
-            notifyUsers: $(Build.RequestedForEmail)
-            instructions: Please validate the release and then publish it!
-            timeoutInMinutes: 1440
     - stage: release_official_MicrosoftPowerShellThreadJob_module
       displayName: release official
       variables:
@@ -175,9 +156,6 @@ extends:
           inputs:
             - input: pipelineArtifact
               artifactName: drop_build_main
-            - input: pipelineArtifact
-              pipeline: PSPackagesOfficial
-              artifactName: drop_upload_upload_packages
         displayName: Publish to PowerShell Gallery
         pool:
           type: release
@@ -187,45 +165,17 @@ extends:
         steps:
         - task: PowerShell@2
           inputs:
-            targetType: inline
-            script: |
-              $localInstallerPath = Get-ChildItem -Path "$(Pipeline.Workspace)/GitHubPackages" -Filter '*win-x64.msi' | Select-Object -First 1 -ExpandProperty FullName
-              if (Test-Path -Path $localInstallerPath) {
-                Write-Verbose -Verbose "Installer found at $localInstallerPath"
-              } else {
-                throw "Installer not found"
-              }
-              Write-Verbose -Verbose "Installing PowerShell via msiexec"
-              Start-Process -FilePath msiexec -ArgumentList "/package $localInstallerPath /quiet REGISTER_MANIFEST=1" -Wait -NoNewWindow
-              $pwshPath = Get-ChildItem -Directory -Path 'C:\Program Files\PowerShell\7*' | Select-Object -First 1 -ExpandProperty FullName
-              if (Test-Path -Path $pwshPath) {
-                Write-Verbose -Verbose "PowerShell installed at $pwshPath"
-                Write-Verbose -Verbose "Adding pwsh to env:PATH"
-                Write-Host "##vso[task.prependpath]$pwshPath"
-              } else {
-                throw "PowerShell not installed"
-              }
-          displayName: Install pwsh 7
-        - task: PowerShell@2
+          targetType: 'inline'
+          script: |
+            Get-ChildItem "$(Pipeline.Workspace)/" -Recurse | Write-Verbose -Verbose
+          displayName: Find Nupkg
+        - task: NuGetCommand@2
+          displayName: Push Official ThreadJob module to PSGallery
           inputs:
-            targetType: inline
-            pwsh: true
-            script: |
-              Write-Verbose -Verbose "Pwsh 7 Installed"
-              Write-Verbose -Verbose "env:Path: "
-              $env:PATH -split ';' | ForEach-Object {
-                Write-Verbose -Verbose $_
-              }
-              Get-ChildItem -Path $(Pipeline.Workspace) -Recurse -File -Name | Write-Verbose -Verbose
-          displayName: Check pwsh 7 installation
-        - task: Powershell@2
-          inputs:
-            pwsh: true
-            targetType: inline
-            script: |
-              Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -NupkgPath $(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.$(version).nupkg
-          displayName: Publish to PowerShell Gallery
+            command: push
+            packagesToPush: '$(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.$(version).nupkg'
+            nuGetFeedType: external
+            publishFeedCrendentials: 'PSThreadJob-PSGalleryPush'
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
       variables:
@@ -240,9 +190,6 @@ extends:
           inputs:
             - input: pipelineArtifact
               artifactName: drop_build_main
-            - input: pipelineArtifact
-              pipeline: PSPackagesOfficial
-              artifactName: drop_upload_upload_packages
         displayName: Publish to PowerShell Gallery
         pool:
           type: release
@@ -252,43 +199,15 @@ extends:
         steps:
         - task: PowerShell@2
           inputs:
-            targetType: inline
+            targetType: 'inline'
             script: |
-              $localInstallerPath = Get-ChildItem -Path "$(Pipeline.Workspace)/GitHubPackages" -Filter '*win-x64.msi' | Select-Object -First 1 -ExpandProperty FullName
-              if (Test-Path -Path $localInstallerPath) {
-                Write-Verbose -Verbose "Installer found at $localInstallerPath"
-              } else {
-                throw "Installer not found"
-              }
-              Write-Verbose -Verbose "Installing PowerShell via msiexec"
-              Start-Process -FilePath msiexec -ArgumentList "/package $localInstallerPath /quiet REGISTER_MANIFEST=1" -Wait -NoNewWindow
-              $pwshPath = Get-ChildItem -Directory -Path 'C:\Program Files\PowerShell\7*' | Select-Object -First 1 -ExpandProperty FullName
-              if (Test-Path -Path $pwshPath) {
-                Write-Verbose -Verbose "PowerShell installed at $pwshPath"
-                Write-Verbose -Verbose "Adding pwsh to env:PATH"
-                Write-Host "##vso[task.prependpath]$pwshPath"
-              } else {
-                throw "PowerShell not installed"
-              }
-          displayName: Install pwsh 7
-        - task: PowerShell@2
+              Get-ChildItem "$(Pipeline.Workspace)/" -Recurse | Write-Verbose -Verbose
+          displayName: Find Nupkg
+        - task: NuGetCommand@2
+          displayName: Push Proxy ThreadJob module to PSGallery
           inputs:
-            targetType: inline
-            pwsh: true
-            script: |
-              Write-Verbose -Verbose "Pwsh 7 Installed"
-              Write-Verbose -Verbose "env:Path: "
-              $env:PATH -split ';' | ForEach-Object {
-                Write-Verbose -Verbose $_
-              }
-              Get-ChildItem -Path $(Pipeline.Workspace) -Recurse -File -Name | Write-Verbose -Verbose
-          displayName: Check pwsh 7 installation
-        - task: Powershell@2
-          inputs:
-            pwsh: true
-            targetType: inline
-            script: |
-              Write-Verbose -Verbose -Message "Publish module to PSGallery"
-              Publish-PSResource -ApiKey $(GalleryKey) -Repository PSGallery -NupkgPath $(Pipeline.Workspace)/ThreadJob.$(version).nupkg
-          displayName: Publish to PowerShell Gallery
+            command: push
+            packagesToPush: '$(Pipeline.Workspace)/ThreadJob.$(version).nupkg'
+            nuGetFeedType: external
+            publishFeedCrendentials: 'PSThreadJob-PSGalleryPush'
           

@@ -148,7 +148,7 @@ extends:
         ob_release_environment: ${{ parameters.ReleaseEnvironment }}
         drop: $(Pipeline.Workspace)/drop_build_main
         version: $[ stageDependencies.build.main.outputs['package.version'] ]
-      dependsOn: [build, manual]
+      dependsOn: [build]
       condition: ${{ parameters.publishOfficialToPowerShellGallery }}
       jobs:
       - job: publish
@@ -182,7 +182,7 @@ extends:
         ob_release_environment: ${{ parameters.ReleaseEnvironment }}
         drop: $(Pipeline.Workspace)/drop_build_main
         version: $[ stageDependencies.build.main.outputs['package.proxyVersion'] ]
-      dependsOn: [build, manual]
+      dependsOn: [build]
       condition: ${{ parameters.publishProxyToPowerShellGallery }}
       jobs:
       - job: publish

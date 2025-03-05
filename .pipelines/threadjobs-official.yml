@@ -175,7 +175,7 @@ extends:
             command: push
             packagesToPush: '$(Pipeline.Workspace)/Microsoft.PowerShell.ThreadJob.$(version).nupkg'
             nuGetFeedType: external
-            publishFeedCrendentials: 'PSThreadJob-PSGalleryPush'
+            publishFeedCredentials: 'PSThreadJob-PSGalleryPush'
     - stage: release_proxy_ThreadJob_module
       displayName: release proxy
       variables:
@@ -209,5 +209,5 @@ extends:
             command: push
             packagesToPush: '$(Pipeline.Workspace)/ThreadJob.$(version).nupkg'
             nuGetFeedType: external
-            publishFeedCrendentials: 'PSThreadJob-PSGalleryPush'
+            publishFeedCredentials: 'PSThreadJob-PSGalleryPush'
           

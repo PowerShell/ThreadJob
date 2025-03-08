@@ -37,6 +37,7 @@ namespace Microsoft.PowerShell.ThreadJob
         private const string FilePathParameterSet = "FilePath";
 
         [Parameter(ParameterSetName = ScriptBlockParameterSet, Mandatory=true, Position=0)]
+        [Alias("Command")]
         [ValidateNotNullAttribute]
         public ScriptBlock ScriptBlock { get; set; }
 
@@ -61,6 +62,7 @@ namespace Microsoft.PowerShell.ThreadJob
 
         [Parameter(ParameterSetName = ScriptBlockParameterSet)]
         [Parameter(ParameterSetName = FilePathParameterSet)]
+        [Alias("Args")]
         public Object[] ArgumentList { get; set; }
 
         [Parameter(ParameterSetName = ScriptBlockParameterSet)]

@@ -1,0 +1,69 @@
+name: Run Pester Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - release/**
+  push:
+    branches:
+      - main
+      - release/**
+
+jobs:
+  test:
+    name: Run Pester Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+        
+    - name: Install Pester
+      shell: pwsh
+      run: |
+        if (-not (Get-Module -ListAvailable -Name Pester | Where-Object Version -ge '5.0.0')) {
+          Install-Module -Name Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
+        }
+        Import-Module Pester -MinimumVersion 5.0.0 -Force
+        
+    - name: Build Module
+      shell: pwsh
+      run: |
+        ./build.ps1 -Build -Clean -BuildConfiguration Release
+        
+    - name: Run Pester Tests
+      shell: pwsh
+      run: |
+        $config = New-PesterConfiguration
+        $config.Run.Path = './test'
+        $config.Run.Exit = $true
+        $config.Output.Verbosity = 'Detailed'
+        $config.CodeCoverage.Enabled = $false
+        $config.TestResult.Enabled = $true
+        $config.TestResult.OutputPath = 'testResults.xml'
+        $config.TestResult.OutputFormat = 'NUnitXml'
+        
+        Invoke-Pester -Configuration $config
+        
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}
+        path: testResults.xml
+        
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: testResults.xml

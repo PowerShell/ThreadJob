@@ -31,10 +31,9 @@ jobs:
     - name: Install Pester
       shell: pwsh
       run: |
-        if (-not (Get-Module -ListAvailable -Name Pester | Where-Object Version -ge '5.0.0')) {
-          Install-Module -Name Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
-        }
-        Import-Module Pester -MinimumVersion 5.0.0 -Force
+        Write-Verbose -Verbose "Installing Pester 4.x"
+        Install-Module -Name Pester -MaximumVersion 4.99 -Force -Scope CurrentUser -SkipPublisherCheck
+        Import-Module Pester -MaximumVersion 4.99 -Force
         
     - name: Build Module
       shell: pwsh
@@ -44,16 +43,7 @@ jobs:
     - name: Run Pester Tests
       shell: pwsh
       run: |
-        $config = New-PesterConfiguration
-        $config.Run.Path = './test'
-        $config.Run.Exit = $true
-        $config.Output.Verbosity = 'Detailed'
-        $config.CodeCoverage.Enabled = $false
-        $config.TestResult.Enabled = $true
-        $config.TestResult.OutputPath = 'testResults.xml'
-        $config.TestResult.OutputFormat = 'NUnitXml'
-        
-        Invoke-Pester -Configuration $config
+        Invoke-Pester -Path './test' -OutputFile 'testResults.xml' -OutputFormat NUnitXml -EnableExit
         
     - name: Upload Test Results
       if: always()

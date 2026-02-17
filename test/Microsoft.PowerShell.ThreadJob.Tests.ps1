@@ -440,8 +440,6 @@ Describe 'Job2 class API tests' -Tags 'CI' {
     It 'Verifies terminating job error' {
 
         $job = Start-ThreadJob -ScriptBlock { throw "My Job Error!" } | Wait-Job
-        $results = $job | Receive-Job 2>&1
-        $results | Should -Not -BeNullOrEmpty
-        $results[0].Exception.Message | Should -Be "My Job Error!"
+        $job.JobStateInfo.Reason.Message | Should -Be "My Job Error!"
     }
 }

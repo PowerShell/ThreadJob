@@ -2,11 +2,11 @@
 
 A PowerShell module for running concurrent jobs based on threads rather than processes
 
-PowerShell's built-in BackgroundJob jobs (Start-Job) are run in separate processes on the local machine. They provide excellent isolation but are resource heavy.  Running hundreds of BackgroundJob jobs can quickly absorb system resources by creating hundreds of processes. There is no throttling mechanism and so all jobs are started immediately and are all run currently.
+PowerShell's built-in BackgroundJob jobs (Start-Job) are run in separate processes on the local machine. They provide excellent isolation but are resource heavy.  Running hundreds of BackgroundJob jobs can quickly absorb system resources by creating hundreds of processes. There is no throttling mechanism and so all jobs are started immediately and are all run concurrently.
 
 This module extends the existing PowerShell BackgroundJob to include a new thread based ThreadJob job. It is a lighter weight solution for running concurrent PowerShell scripts that works within the existing PowerShell job infrastructure. So these jobs work with existing PowerShell job cmdlets.
 
-ThreadJob jobs will tend to run much faster because there is lower overhead and they do not use the remoting serialization system as BackgroundJob jobs do. And they will use up fewer system resources. In addition output objects returned from the job will be 'live' since they are not re-hydrated from the serialization system.  However, there is less isolation.  If one ThreadJob job crashes the process then all ThreadJob jobs running in that process will be terminated.
+ThreadJob jobs will tend to run much faster because there is lower overhead and they do not use the remoting serialization system as BackgroundJob jobs do. Additionally, they consume fewer system resources. In addition output objects returned from the job will be 'live' since they are not re-hydrated from the serialization system.  However, there is less isolation.  If one ThreadJob job crashes the process then all ThreadJob jobs running in that process will be terminated.
 
 This module exports a single cmdlet, Start-ThreadJob, which works similarly to the existing Start-Job cmdlet. The main difference is that the jobs which are created run in separate threads within the local process.
 

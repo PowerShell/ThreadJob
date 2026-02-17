@@ -1,0 +1,59 @@
+name: Run Pester Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - release/**
+  push:
+    branches:
+      - main
+      - release/**
+
+jobs:
+  test:
+    name: Run Pester Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+        
+    - name: Install Pester
+      shell: pwsh
+      run: |
+        Write-Verbose -Verbose "Installing Pester 4.x"
+        Install-Module -Name Pester -MaximumVersion 4.99 -Force -Scope CurrentUser -SkipPublisherCheck
+        Import-Module Pester -MaximumVersion 4.99 -Force
+        
+    - name: Build Module
+      shell: pwsh
+      run: |
+        ./build.ps1 -Build -Clean -BuildConfiguration Release
+        
+    - name: Run Pester Tests
+      shell: pwsh
+      run: |
+        Invoke-Pester -Path './test' -OutputFile 'testResults.xml' -OutputFormat NUnitXml -EnableExit
+        
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}
+        path: testResults.xml
+        
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: testResults.xml

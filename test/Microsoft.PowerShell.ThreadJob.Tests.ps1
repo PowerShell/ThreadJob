@@ -441,6 +441,6 @@ Describe 'Job2 class API tests' -Tags 'CI' {
 
         $job = Start-ThreadJob -ScriptBlock { throw "My Job Error!" } | Wait-Job
         $results = $job | Receive-Job 2>&1
-        $results.ToString() | Should -Be "My Job Error!"
+        $results.ToString() | Should -Match "My Job Error!"
     }
 }

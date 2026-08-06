@@ -45,7 +45,7 @@ PowerShellVersion = '5.1'
 
 # Cmdlets to export from this module
 CmdletsToExport = 'Start-ThreadJob'
-AliasesToExport = 'satj'
+AliasesToExport = 'satjb'
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
 

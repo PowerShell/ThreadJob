@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 namespace Microsoft.PowerShell.ThreadJob
 {
     [Cmdlet(VerbsLifecycle.Start, "ThreadJob")]
-    [Alias('satj')]
+    [Alias('satjb')]
     [OutputType(typeof(ThreadJob))]
     public sealed class StartThreadJobCommand : PSCmdlet
     {

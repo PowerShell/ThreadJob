@@ -648,14 +648,7 @@ namespace Microsoft.PowerShell.ThreadJob
                 iss.LanguageMode = enforceLockdown ? PSLanguageMode.ConstrainedLanguage : PSLanguageMode.FullLanguage;
             }
 
-            if (_streamingHost != null)
-            {
-                _rs = RunspaceFactory.CreateRunspace(_streamingHost, iss);
-            }
-            else
-            {
-                _rs = RunspaceFactory.CreateRunspace(iss);
-            }
+            _rs = RunspaceFactory.CreateRunspace(iss);
             _ps = System.Management.Automation.PowerShell.Create();
             _ps.Runspace = _rs;
             _ps.InvocationStateChanged += (sender, psStateChanged) =>
@@ -708,24 +701,25 @@ namespace Microsoft.PowerShell.ThreadJob
             this.Error = _ps.Streams.Error;
             this.Error.EnumeratorNeverBlocks = true;
 
-            this.Progress = _ps.Streams.Progress;
+            // Host-streamed records must not be replayed by Receive-Job.
+            if (_streamingHost == null)
+            {
+                this.Progress = _ps.Streams.Progress;
+                this.Verbose = _ps.Streams.Verbose;
+                this.Warning = _ps.Streams.Warning;
+                this.Debug = _ps.Streams.Debug;
+            }
+
+            this.Information = _ps.Streams.Information;
             this.Progress.EnumeratorNeverBlocks = true;
-
-            this.Verbose = _ps.Streams.Verbose;
             this.Verbose.EnumeratorNeverBlocks = true;
-
-            this.Warning = _ps.Streams.Warning;
             this.Warning.EnumeratorNeverBlocks = true;
+            this.Debug.EnumeratorNeverBlocks = true;
+            this.Information.EnumeratorNeverBlocks = true;
             if (lockdownWarning != null)
             {
                 this.Warning.Add(lockdownWarning);
             }
-
-            this.Debug = _ps.Streams.Debug;
-            this.Debug.EnumeratorNeverBlocks = true;
-
-            this.Information = _ps.Streams.Information;
-            this.Information.EnumeratorNeverBlocks = true;
 
             // Create the JobManager job definition and job specification, and add to the JobManager.
             ThreadJobDefinition = new JobDefinition(typeof(ThreadJobSourceAdapter), "", Name);
@@ -770,7 +764,8 @@ namespace Microsoft.PowerShell.ThreadJob
                 _ps.Commands.Clear();
                 _ps.AddScript(_initSb.ToString());
                 _runningInitScript = true;
-                _ps.BeginInvoke<object, PSObject>(_input, _output);
+                var settings = _streamingHost == null ? null : new PSInvocationSettings { Host = _streamingHost };
+                _ps.BeginInvoke<object, PSObject>(_input, _output, settings, null, null);
             }
             else
             {
@@ -1078,7 +1073,8 @@ namespace Microsoft.PowerShell.ThreadJob
                 _ps.AddParameter(VERBATIM_ARGUMENT, _usingValuesMap);
             }
 
-            _ps.BeginInvoke<object, PSObject>(_input, _output);
+            var settings = _streamingHost == null ? null : new PSInvocationSettings { Host = _streamingHost };
+            _ps.BeginInvoke<object, PSObject>(_input, _output, settings, null, null);
         }
 
         private ScriptBlock GetScriptBlockFromFile(string filePath, PSCmdlet psCmdlet)

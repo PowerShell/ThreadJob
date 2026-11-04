@@ -171,6 +171,9 @@ Accept wildcard characters: False
 
 ### -StreamingHost
 Optional host object to which job output can directed.
+Progress, verbose, warning, debug, and information messages are streamed to this host
+instead of being buffered for `Receive-Job`. Success output and errors remain buffered
+in the job.
 
 ```yaml
 Type: PSHost

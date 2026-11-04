@@ -23,6 +23,61 @@ function Wait-ForJobRunning
     }
 }
 
+Describe 'ThreadJob StreamingHost Tests' -Tags 'CI' {
+
+    It 'Streams <Stream> output once while Receive-Job waits (initialization: <Initialization>)' -TestCases @(
+        foreach ($initialization in $false, $true)
+        {
+            @{ Stream = 'Verbose'; Prefix = 'VERBOSE: '; Command = 'Write-Verbose "StreamingHostMessage" -Verbose'; Initialization = $initialization }
+            @{ Stream = 'Debug'; Prefix = 'DEBUG: '; Command = 'Write-Debug "StreamingHostMessage" -Debug'; Initialization = $initialization }
+            @{ Stream = 'Warning'; Prefix = 'WARNING: '; Command = 'Write-Warning "StreamingHostMessage"'; Initialization = $initialization }
+            @{ Stream = 'Information'; Prefix = ''; Command = 'Write-Information "StreamingHostMessage" -InformationAction Continue'; Initialization = $initialization }
+            @{ Stream = 'Host'; Prefix = ''; Command = 'Write-Host "StreamingHostMessage"'; Initialization = $initialization }
+        }
+    ) {
+        param ($Stream, $Prefix, $Command, $Initialization)
+
+        $modulePath = (Get-Command Start-ThreadJob).Module.Path.Replace("'", "''")
+        if ($Initialization)
+        {
+            $scriptParameters = "-InitializationScript { $Command; Start-Sleep -Milliseconds 300 } -ScriptBlock { 'SuccessOutput' }"
+        }
+        else
+        {
+            $scriptParameters = "-ScriptBlock { $Command; Start-Sleep -Milliseconds 300; 'SuccessOutput' }"
+        }
+
+        $script = @"
+if (`$null -ne `$PSStyle) { `$PSStyle.OutputRendering = 'PlainText' }
+Import-Module '$modulePath'
+Start-ThreadJob -StreamingHost `$Host $scriptParameters | Receive-Job -Wait -Verbose -Debug -InformationAction Continue
+"@
+
+        $results = & (Get-Process -Id $PID).Path -NoProfile -NonInteractive -Command $script
+        $LASTEXITCODE | Should -Be 0
+        @($results | Where-Object { $_ -eq 'SuccessOutput' }) | Should -HaveCount 1
+        @($results | Where-Object { $_ -eq "${Prefix}StreamingHostMessage" }) |
+            Should -HaveCount 1
+    }
+
+    It 'Retains success output and errors when using StreamingHost' {
+        $job = Start-ThreadJob -StreamingHost $Host -ScriptBlock {
+            'SuccessOutput'
+            Write-Error 'ErrorOutput'
+        } | Wait-Job
+
+        try
+        {
+            $job.Output | Should -Be 'SuccessOutput'
+            $job.Error | Should -Be 'ErrorOutput'
+        }
+        finally
+        {
+            $job | Remove-Job -Force
+        }
+    }
+}
+
 # Basic thread job tests
 
 Describe 'Basic ThreadJob Tests' -Tags 'CI' {

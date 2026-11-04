@@ -31,11 +31,15 @@ Describe 'ThreadJob StreamingHost Tests' -Tags 'CI' {
             @{ Stream = 'Verbose'; Prefix = 'VERBOSE: '; Command = 'Write-Verbose "StreamingHostMessage" -Verbose'; Initialization = $initialization }
             @{ Stream = 'Debug'; Prefix = 'DEBUG: '; Command = 'Write-Debug "StreamingHostMessage" -Debug'; Initialization = $initialization }
             @{ Stream = 'Warning'; Prefix = 'WARNING: '; Command = 'Write-Warning "StreamingHostMessage"'; Initialization = $initialization }
-            @{ Stream = 'Information'; Prefix = ''; Command = 'Write-Information "StreamingHostMessage" -InformationAction Continue'; Initialization = $initialization }
-            @{ Stream = 'Host'; Prefix = ''; Command = 'Write-Host "StreamingHostMessage"'; Initialization = $initialization }
         }
     ) {
         param ($Stream, $Prefix, $Command, $Initialization)
+
+        if ($Stream -eq 'Debug' -and $PSVersionTable.PSVersion.Major -eq 5)
+        {
+            # Windows PowerShell's -Debug parameter prompts instead of continuing.
+            $Command = '$DebugPreference = "Continue"; Write-Debug "StreamingHostMessage"'
+        }
 
         $modulePath = (Get-Command Start-ThreadJob).Module.Path.Replace("'", "''")
         if ($Initialization)
@@ -50,7 +54,7 @@ Describe 'ThreadJob StreamingHost Tests' -Tags 'CI' {
         $script = @"
 if (`$null -ne `$PSStyle) { `$PSStyle.OutputRendering = 'PlainText' }
 Import-Module '$modulePath'
-Start-ThreadJob -StreamingHost `$Host $scriptParameters | Receive-Job -Wait -Verbose -Debug -InformationAction Continue
+Start-ThreadJob -StreamingHost `$Host $scriptParameters | Receive-Job -Wait -Verbose -Debug
 "@
 
         $results = & (Get-Process -Id $PID).Path -NoProfile -NonInteractive -Command $script
@@ -60,16 +64,20 @@ Start-ThreadJob -StreamingHost `$Host $scriptParameters | Receive-Job -Wait -Ver
             Should -HaveCount 1
     }
 
-    It 'Retains success output and errors when using StreamingHost' {
+    It 'Retains success output, errors, and silent information when using StreamingHost' {
         $job = Start-ThreadJob -StreamingHost $Host -ScriptBlock {
             'SuccessOutput'
             Write-Error 'ErrorOutput'
+            Write-Information 'InformationOutput' -Tags 'TestTag'
         } | Wait-Job
 
         try
         {
             $job.Output | Should -Be 'SuccessOutput'
             $job.Error | Should -Be 'ErrorOutput'
+            $job.Information | Should -HaveCount 1
+            $job.Information[0].MessageData | Should -Be 'InformationOutput'
+            $job.Information[0].Tags | Should -Contain 'TestTag'
         }
         finally
         {

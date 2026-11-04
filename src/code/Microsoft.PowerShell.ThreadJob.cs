@@ -708,9 +708,9 @@ namespace Microsoft.PowerShell.ThreadJob
                 this.Verbose = _ps.Streams.Verbose;
                 this.Warning = _ps.Streams.Warning;
                 this.Debug = _ps.Streams.Debug;
-                this.Information = _ps.Streams.Information;
             }
 
+            this.Information = _ps.Streams.Information;
             this.Progress.EnumeratorNeverBlocks = true;
             this.Verbose.EnumeratorNeverBlocks = true;
             this.Warning.EnumeratorNeverBlocks = true;
